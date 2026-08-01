@@ -12,13 +12,11 @@ import { CartService } from '../../services/cart.service';
         
         <!-- Top Row: Logo + Cart -->
         <div class="flex items-center justify-between">
-          <!-- Logo -->
           <div class="flex items-center gap-1 cursor-pointer" (click)="onSelect('all')">
             <span class="text-2xl sm:text-3xl font-black tracking-tighter text-emerald-400">PLUG</span>
             <span class="text-2xl sm:text-3xl font-light text-white">YARD</span>
           </div>
 
-          <!-- Cart Button -->
           <button 
             (click)="openCart.emit()"
             class="relative flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 px-4 py-2.5 rounded-full border border-zinc-700 transition-all">
@@ -36,58 +34,35 @@ import { CartService } from '../../services/cart.service';
           </button>
         </div>
 
-        <!-- Categories - Visible on all screens -->
-        <nav class="flex gap-2 sm:gap-4 mt-4 overflow-x-auto pb-1 scrollbar-hide">
-          <button 
-            (click)="onSelect('all')"
-            class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition"
-            [class.bg-emerald-500]="activeCategory() === 'all'"
-            [class.text-black]="activeCategory() === 'all'"
-            [class.text-zinc-400]="activeCategory() !== 'all'"
-            [class.hover:text-emerald-400]="activeCategory() !== 'all'">
-            All
-          </button>
+        <!-- Scrollable Categories -->
+        <div class="relative mt-4">
+          <!-- Left fade -->
+          <div class="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-zinc-950 to-transparent z-10 pointer-events-none sm:hidden"></div>
+          
+          <!-- Right fade + swipe hint -->
+          <div class="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-zinc-950 to-transparent z-10 pointer-events-none sm:hidden flex items-center justify-end pr-1">
+            <span class="text-zinc-500 text-xs animate-pulse">›</span>
+          </div>
 
-          <button 
-            (click)="onSelect('vape')"
-            class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition"
-            [class.bg-emerald-500]="activeCategory() === 'vape'"
-            [class.text-black]="activeCategory() === 'vape'"
-            [class.text-zinc-400]="activeCategory() !== 'vape'"
-            [class.hover:text-emerald-400]="activeCategory() !== 'vape'">
-            Vapes
-          </button>
+          <nav class="flex gap-2 sm:gap-3 overflow-x-auto pb-1 scrollbar-hide px-1">
+            @for (cat of categories; track cat.value) {
+              <button 
+                (click)="onSelect(cat.value)"
+                class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition shrink-0"
+                [class.bg-emerald-500]="activeCategory() === cat.value"
+                [class.text-black]="activeCategory() === cat.value"
+                [class.text-zinc-400]="activeCategory() !== cat.value"
+                [class.hover:text-emerald-400]="activeCategory() !== cat.value">
+                {{ cat.label }}
+              </button>
+            }
+          </nav>
+        </div>
 
-          <button 
-            (click)="onSelect('eliquid')"
-            class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition"
-            [class.bg-emerald-500]="activeCategory() === 'eliquid'"
-            [class.text-black]="activeCategory() === 'eliquid'"
-            [class.text-zinc-400]="activeCategory() !== 'eliquid'"
-            [class.hover:text-emerald-400]="activeCategory() !== 'eliquid'">
-            E-Liquids
-          </button>
-
-          <button 
-            (click)="onSelect('bong')"
-            class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition"
-            [class.bg-emerald-500]="activeCategory() === 'bong'"
-            [class.text-black]="activeCategory() === 'bong'"
-            [class.text-zinc-400]="activeCategory() !== 'bong'"
-            [class.hover:text-emerald-400]="activeCategory() !== 'bong'">
-            Bongs
-          </button>
-
-          <button 
-            (click)="onSelect('accessory')"
-            class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition"
-            [class.bg-emerald-500]="activeCategory() === 'accessory'"
-            [class.text-black]="activeCategory() === 'accessory'"
-            [class.text-zinc-400]="activeCategory() !== 'accessory'"
-            [class.hover:text-emerald-400]="activeCategory() !== 'accessory'">
-            Accessories
-          </button>
-        </nav>
+        <!-- Small hint text (mobile only) -->
+        <p class="text-[10px] text-zinc-600 mt-1.5 sm:hidden text-center">
+          ← Swipe to see more categories →
+        </p>
       </div>
     </header>
   `,
@@ -108,6 +83,14 @@ export class HeaderComponent {
   selectCategory = output<string>();
 
   activeCategory = signal('all');
+
+  categories = [
+    { label: 'All', value: 'all' },
+    { label: 'Vapes', value: 'vape' },
+    { label: 'E-Liquids', value: 'eliquid' },
+    { label: 'Bongs', value: 'bong' },
+    { label: 'Accessories', value: 'accessory' }
+  ];
 
   onSelect(category: string) {
     this.activeCategory.set(category);
