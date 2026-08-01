@@ -33,7 +33,7 @@ import { CartService } from '../../services/cart.service';
               <p class="text-zinc-400 text-sm mb-4 line-clamp-2">{{ product.description }}</p>
               
               <div class="flex items-center justify-between">
-                <span class="text-xl font-bold text-white">\${{ product.price.toFixed(2) }}</span>
+                <span class="text-xl font-bold text-white">\KSH{{ product.price.toFixed(2) }}</span>
                 
                 <button 
                   (click)="addToCart(product)"

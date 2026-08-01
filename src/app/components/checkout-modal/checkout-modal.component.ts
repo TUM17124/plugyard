@@ -28,12 +28,12 @@ import { CartService } from '../../services/cart.service';
             @for (item of cart.items(); track item.product.id) {
               <div class="flex justify-between text-sm mb-2">
                 <span>{{ item.qty }}× {{ item.product.name }}</span>
-                <span>\${{ (item.product.price * item.qty).toFixed(2) }}</span>
+                <span>\KSH{{ (item.product.price * item.qty).toFixed(2) }}</span>
               </div>
             }
             <div class="flex justify-between font-bold text-lg mt-4 pt-3 border-t border-zinc-800">
               <span>Total</span>
-              <span class="text-emerald-400">\${{ cart.totalPrice().toFixed(2) }}</span>
+              <span class="text-emerald-400">\KSH{{ cart.totalPrice().toFixed(2) }}</span>
             </div>
           </div>
 
@@ -114,7 +114,7 @@ export class CheckoutModalComponent {
 
     // Build order text
     const itemsText = this.cart.items()
-      .map(i => `${i.qty}x ${i.product.name} ($${i.product.price})`)
+      .map(i => `${i.qty}x ${i.product.name} (KSH${i.product.price})`)
       .join('\n');
 
     const total = this.cart.totalPrice().toFixed(2);
@@ -122,14 +122,14 @@ export class CheckoutModalComponent {
     // ========== FORM SUBMIT (No backend needed) ==========
     // Replace YOUR_EMAIL with your real email
     const formData = new FormData();
-    formData.append('_subject', `New PlugYard Order - $${total}`);
+    formData.append('_subject', `New PlugYard Order - KSH${total}`);
     formData.append('name', this.form.name);
     formData.append('email', this.form.email);
     formData.append('phone', this.form.phone);
     formData.append('address', this.form.address);
     formData.append('notes', this.form.notes || 'None');
     formData.append('items', itemsText);
-    formData.append('total', `$${total}`);
+    formData.append('total', `KSH${total}`);
 
     try {
       await fetch('https://formsubmit.co/ajax/532995f2725a8c447f38569d1fcee84a', {
