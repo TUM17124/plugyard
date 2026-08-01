@@ -48,11 +48,22 @@ import { LegalComponent } from './components/legal/legal.component';
       <app-product-grid [selectedCategory]="currentCategory()" />
     </div>
 
-    <!-- Footer -->
+   <!-- Footer -->
 <footer class="border-t border-zinc-800 py-12 mt-8">
   <div class="max-w-7xl mx-auto px-4 text-center text-zinc-500 text-sm space-y-4">
     <p class="text-zinc-400 font-medium text-base">PlugYard</p>
-    
+
+    <!-- Contact Email -->
+    <p>
+      Contact:
+      <a
+        href="mailto:contact@plugyard.com"
+        class="text-emerald-400 hover:underline"
+      >
+        contact@plugyard.com
+      </a>
+    </p>
+
     <!-- Legal Links -->
     <div class="flex flex-wrap justify-center gap-4 text-xs">
       <button (click)="openLegal('terms')" class="hover:text-emerald-400 transition">
