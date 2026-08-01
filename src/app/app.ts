@@ -5,6 +5,7 @@ import { ProductGridComponent } from './components/product-grid/product-grid.com
 import { CartDrawerComponent } from './components/cart-drawer/cart-drawer.component';
 import { CheckoutModalComponent } from './components/checkout-modal/checkout-modal.component';
 import { AgeGateComponent } from './components/age-gate/age-gate.component';
+import { LegalComponent } from './components/legal/legal.component';
 
 @Component({
   selector: 'app-root',
@@ -15,7 +16,8 @@ import { AgeGateComponent } from './components/age-gate/age-gate.component';
     ProductGridComponent,
     CartDrawerComponent,
     CheckoutModalComponent,
-    AgeGateComponent
+    AgeGateComponent,
+    LegalComponent
   ],
   template: `
     <app-age-gate />
@@ -47,14 +49,28 @@ import { AgeGateComponent } from './components/age-gate/age-gate.component';
     </div>
 
     <!-- Footer -->
-    <footer class="border-t border-zinc-800 py-12 mt-8">
-      <div class="max-w-7xl mx-auto px-4 text-center text-zinc-500 text-sm space-y-2">
-        <p class="text-zinc-400 font-medium">PlugYard</p>
-        <p>© 2026 All rights reserved.</p>
-        <p>You must be 18+ (or 21+ depending on your location) to purchase.</p>
-        <p class="text-xs">Please vape and smoke responsibly.</p>
-      </div>
-    </footer>
+<footer class="border-t border-zinc-800 py-12 mt-8">
+  <div class="max-w-7xl mx-auto px-4 text-center text-zinc-500 text-sm space-y-4">
+    <p class="text-zinc-400 font-medium text-base">PlugYard</p>
+    
+    <!-- Legal Links -->
+    <div class="flex flex-wrap justify-center gap-4 text-xs">
+      <button (click)="openLegal('terms')" class="hover:text-emerald-400 transition">
+        Terms of Service
+      </button>
+      <button (click)="openLegal('privacy')" class="hover:text-emerald-400 transition">
+        Privacy Policy
+      </button>
+      <button (click)="openLegal('disclaimer')" class="hover:text-emerald-400 transition">
+        Age & Legal Disclaimer
+      </button>
+    </div>
+
+    <p>© 2026 All rights reserved.</p>
+    <p>You must be 18+ (or the legal age in your location) to purchase.</p>
+    <p class="text-xs">Please vape and smoke responsibly.</p>
+  </div>
+</footer>
 
     <app-cart-drawer 
       [isOpen]="cartOpen()" 
@@ -65,6 +81,11 @@ import { AgeGateComponent } from './components/age-gate/age-gate.component';
       [isOpen]="checkoutOpen()"
       (close)="checkoutOpen.set(false)"
       (orderPlaced)="onOrderPlaced()" />
+
+    <app-legal
+      [isOpen]="legalOpen()"
+      [type]="legalType()"
+      (close)="legalOpen.set(false)" />
   `
 })
 export class App {
@@ -77,6 +98,14 @@ export class App {
     // Smooth scroll to products
     document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
   }
+
+  legalOpen = signal(false);
+legalType = signal<'terms' | 'privacy' | 'disclaimer'>('terms');
+
+openLegal(type: 'terms' | 'privacy' | 'disclaimer') {
+  this.legalType.set(type);
+  this.legalOpen.set(true);
+}
 
   openCheckout() {
     this.cartOpen.set(false);
