@@ -29,12 +29,12 @@ import { CartService, CartItem } from '../../services/cart.service';
               @for (item of cart.items(); track item.product.id) {
                 <div class="flex justify-between text-sm mb-2">
                   <span>{{ item.qty }}× {{ item.product.name }}</span>
-                  <span>\${{ (item.product.price * item.qty).toFixed(2) }}</span>
+                  <span>\KSH{{ (item.product.price * item.qty).toFixed(2) }}</span>
                 </div>
               }
               <div class="flex justify-between font-bold text-lg mt-4 pt-3 border-t border-zinc-800">
                 <span>Total</span>
-                <span class="text-emerald-400">\${{ cart.totalPrice().toFixed(2) }}</span>
+                <span class="text-emerald-400">\KSH{{ cart.totalPrice().toFixed(2) }}</span>
               </div>
             </div>
 
@@ -111,14 +111,14 @@ import { CartService, CartItem } from '../../services/cart.service';
                       <p class="text-zinc-400 text-xs">Qty: {{ item.qty }}</p>
                     </div>
                     <p class="text-emerald-400 font-medium text-sm">
-                      \${{ (item.product.price * item.qty).toFixed(2) }}
+                      \KSH{{ (item.product.price * item.qty).toFixed(2) }}
                     </p>
                   </div>
                 }
 
                 <div class="flex justify-between font-bold mt-4 pt-3 border-t border-zinc-700">
                   <span>Total</span>
-                  <span class="text-emerald-400">\${{ orderTotal.toFixed(2) }}</span>
+                  <span class="text-emerald-400">\KSH{{ orderTotal.toFixed(2) }}</span>
                 </div>
               </div>
 
@@ -160,6 +160,19 @@ export class CheckoutModalComponent {
       return;
     }
 
+    // Save order for "My Orders"
+this.cart.saveOrder(
+  {
+    name: this.form.name,
+    email: this.form.email,
+    phone: this.form.phone,
+    address: this.form.address,
+    notes: this.form.notes
+  },
+  this.orderedItems,
+  this.orderTotal
+);
+
     this.loading.set(true);
 
     // Save ordered items BEFORE clearing the cart
@@ -167,18 +180,18 @@ export class CheckoutModalComponent {
     this.orderTotal = this.cart.totalPrice();
 
     const itemsText = this.orderedItems
-      .map(i => `${i.qty}x ${i.product.name} ($${i.product.price})`)
+      .map(i => `KSH${i.qty}x ${i.product.name} (KSH${i.product.price})`)
       .join('\n');
 
     const formData = new FormData();
-    formData.append('_subject', `New PlugYard Order - $${this.orderTotal.toFixed(2)}`);
+    formData.append('_subject', `New PlugYard Order - KSH${this.orderTotal.toFixed(2)}`);
     formData.append('name', this.form.name);
     formData.append('email', this.form.email);
     formData.append('phone', this.form.phone);
     formData.append('address', this.form.address);
     formData.append('notes', this.form.notes || 'None');
     formData.append('items', itemsText);
-    formData.append('total', `$${this.orderTotal.toFixed(2)}`);
+    formData.append('total', `KSH${this.orderTotal.toFixed(2)}`);
 
     try {
       // ⚠️ Replace with your real email

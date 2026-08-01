@@ -6,6 +6,7 @@ import { CartDrawerComponent } from './components/cart-drawer/cart-drawer.compon
 import { CheckoutModalComponent } from './components/checkout-modal/checkout-modal.component';
 import { AgeGateComponent } from './components/age-gate/age-gate.component';
 import { LegalComponent } from './components/legal/legal.component';
+import { OrdersDrawerComponent } from './components/orders-drawer/orders-drawer.component';
 
 @Component({
   selector: 'app-root',
@@ -17,13 +18,15 @@ import { LegalComponent } from './components/legal/legal.component';
     CartDrawerComponent,
     CheckoutModalComponent,
     AgeGateComponent,
-    LegalComponent
+    LegalComponent,
+    OrdersDrawerComponent
   ],
   template: `
     <app-age-gate />
 
     <app-header 
       (openCart)="cartOpen.set(true)" 
+      (openOrders)="ordersOpen.set(true)"
       (selectCategory)="onCategoryChange($event)" />
 
     <!-- Hero -->
@@ -48,51 +51,54 @@ import { LegalComponent } from './components/legal/legal.component';
       <app-product-grid [selectedCategory]="currentCategory()" />
     </div>
 
-   <!-- Footer -->
-<footer class="border-t border-zinc-800 py-12 mt-8">
-  <div class="max-w-7xl mx-auto px-4 text-center text-zinc-500 text-sm space-y-4">
-    <p class="text-zinc-400 font-medium text-base">PlugYard</p>
+    <!-- Footer -->
+    <footer class="border-t border-zinc-800 py-12 mt-8">
+      <div class="max-w-7xl mx-auto px-4 text-center text-zinc-500 text-sm space-y-4">
+        <p class="text-zinc-400 font-medium text-base">PlugYard</p>
 
-    <!-- Contact Email -->
-    <p>
-      Contact:
-      <a
-        href="mailto:contact@plugyard.com"
-        class="text-emerald-400 hover:underline"
-      >
-        contact@plugyard.com
-      </a>
-    </p>
+        <p>
+          Contact:
+          <a href="mailto:contact@plugyard.com" class="text-emerald-400 hover:underline">
+            contact@plugyard.com
+          </a>
+        </p>
 
-    <!-- Legal Links -->
-    <div class="flex flex-wrap justify-center gap-4 text-xs">
-      <button (click)="openLegal('terms')" class="hover:text-emerald-400 transition">
-        Terms of Service
-      </button>
-      <button (click)="openLegal('privacy')" class="hover:text-emerald-400 transition">
-        Privacy Policy
-      </button>
-      <button (click)="openLegal('disclaimer')" class="hover:text-emerald-400 transition">
-        Age & Legal Disclaimer
-      </button>
-    </div>
+        <div class="flex flex-wrap justify-center gap-4 text-xs">
+          <button (click)="openLegal('terms')" class="hover:text-emerald-400 transition">
+            Terms of Service
+          </button>
+          <button (click)="openLegal('privacy')" class="hover:text-emerald-400 transition">
+            Privacy Policy
+          </button>
+          <button (click)="openLegal('disclaimer')" class="hover:text-emerald-400 transition">
+            Age & Legal Disclaimer
+          </button>
+        </div>
 
-    <p>© 2026 All rights reserved.</p>
-    <p>You must be 18+ (or the legal age in your location) to purchase.</p>
-    <p class="text-xs">Please vape and smoke responsibly.</p>
-  </div>
-</footer>
+        <p>© 2026 All rights reserved.</p>
+        <p>You must be 18+ (or the legal age in your location) to purchase.</p>
+        <p class="text-xs">Please vape and smoke responsibly.</p>
+      </div>
+    </footer>
 
+    <!-- Cart Drawer -->
     <app-cart-drawer 
       [isOpen]="cartOpen()" 
       (close)="cartOpen.set(false)"
       (checkout)="openCheckout()" />
 
+    <!-- Orders Drawer -->
+    <app-orders-drawer
+      [isOpen]="ordersOpen()"
+      (close)="ordersOpen.set(false)" />
+
+    <!-- Checkout Modal -->
     <app-checkout-modal
       [isOpen]="checkoutOpen()"
       (close)="checkoutOpen.set(false)"
       (orderPlaced)="onOrderPlaced()" />
 
+    <!-- Legal Modal -->
     <app-legal
       [isOpen]="legalOpen()"
       [type]="legalType()"
@@ -101,22 +107,22 @@ import { LegalComponent } from './components/legal/legal.component';
 })
 export class App {
   cartOpen = signal(false);
+  ordersOpen = signal(false);
   checkoutOpen = signal(false);
   currentCategory = signal('all');
 
+  legalOpen = signal(false);
+  legalType = signal<'terms' | 'privacy' | 'disclaimer'>('terms');
+
   onCategoryChange(category: string) {
     this.currentCategory.set(category);
-    // Smooth scroll to products
     document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
   }
 
-  legalOpen = signal(false);
-legalType = signal<'terms' | 'privacy' | 'disclaimer'>('terms');
-
-openLegal(type: 'terms' | 'privacy' | 'disclaimer') {
-  this.legalType.set(type);
-  this.legalOpen.set(true);
-}
+  openLegal(type: 'terms' | 'privacy' | 'disclaimer') {
+    this.legalType.set(type);
+    this.legalOpen.set(true);
+  }
 
   openCheckout() {
     this.cartOpen.set(false);
@@ -124,6 +130,8 @@ openLegal(type: 'terms' | 'privacy' | 'disclaimer') {
   }
 
   onOrderPlaced() {
-    this.checkoutOpen.set(false);
+    // Keep checkout open so the confirmation screen can show
+    // or close it if you prefer:
+    // this.checkoutOpen.set(false);
   }
 }
