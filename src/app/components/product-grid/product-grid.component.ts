@@ -65,16 +65,18 @@ export class ProductGridComponent {
   }
 
   get categoryTitle(): string {
-    const cat = this.selectedCategory();
-    const titles: Record<string, string> = {
-      all: 'Shop All Products',
-      vape: 'Vapes',
-      eliquid: 'E-Liquids',
-      bong: 'Bongs',
-      accessory: 'Accessories'
-    };
-    return titles[cat] || 'Shop All Products';
-  }
+  const cat = this.selectedCategory();
+  const titles: Record<string, string> = {
+    all: 'Shop All Products',
+    vape: 'Vapes',
+    eliquid: 'E-Liquids',
+    bong: 'Bongs',
+    rollingpaper: 'Rolling Papers',
+    cigar: 'Cigars',
+    accessory: 'Accessories'
+  };
+  return titles[cat] || 'Shop All Products';
+}
 
   addToCart(product: Product) {
     this.cart.add(product);

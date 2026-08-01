@@ -99,12 +99,14 @@ export class HeaderComponent {
   activeCategory = signal('all');
 
   categories = [
-    { label: 'All', value: 'all' },
-    { label: 'Vapes', value: 'vape' },
-    { label: 'E-Liquids', value: 'eliquid' },
-    { label: 'Bongs', value: 'bong' },
-    { label: 'Accessories', value: 'accessory' }
-  ];
+  { label: 'All', value: 'all' },
+  { label: 'Vapes', value: 'vape' },
+  { label: 'E-Liquids', value: 'eliquid' },
+  { label: 'Bongs', value: 'bong' },
+  { label: 'Papers', value: 'rollingpaper' },
+  { label: 'Cigars', value: 'cigar' },
+  { label: 'Accessories', value: 'accessory' }
+];
 
   onSelect(category: string) {
     this.activeCategory.set(category);
