@@ -41,7 +41,7 @@ import { CartService } from '../../services/cart.service';
                 <img [src]="item.product.image" class="w-20 h-20 object-cover rounded-lg">
                 <div class="flex-1">
                   <h4 class="font-medium line-clamp-1">{{ item.product.name }}</h4>
-                  <p class="text-emerald-400 font-semibold mt-1">\KSH{{ item.product.price.toFixed(2) }}</p>
+                  <p class="text-emerald-400 font-semibold mt-1">\KSH {{ item.product.price.toFixed(2) }}</p>
                   
                   <div class="flex items-center gap-3 mt-3">
                     <button (click)="cart.updateQty(item.product.id, item.qty - 1)" 
@@ -64,7 +64,7 @@ import { CartService } from '../../services/cart.service';
           <div class="p-5 border-t border-zinc-800 space-y-4">
             <div class="flex justify-between text-lg font-bold">
               <span>Total</span>
-              <span class="text-emerald-400">\KSH{{ cart.totalPrice().toFixed(2) }}</span>
+              <span class="text-emerald-400">\KSH {{ cart.totalPrice().toFixed(2) }}</span>
             </div>
             <button 
               (click)="checkout.emit()"

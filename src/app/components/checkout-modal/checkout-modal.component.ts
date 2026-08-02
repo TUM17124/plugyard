@@ -29,12 +29,12 @@ import { CartService, CartItem } from '../../services/cart.service';
               @for (item of cart.items(); track item.product.id) {
                 <div class="flex justify-between text-sm mb-2">
                   <span>{{ item.qty }}× {{ item.product.name }}</span>
-                  <span>\KSH{{ (item.product.price * item.qty).toFixed(2) }}</span>
+                  <span>KSH {{ item.product.price * item.qty }}</span>
                 </div>
               }
               <div class="flex justify-between font-bold text-lg mt-4 pt-3 border-t border-zinc-800">
                 <span>Total</span>
-                <span class="text-emerald-400">\KSH{{ cart.totalPrice().toFixed(2) }}</span>
+                <span class="text-emerald-400">KSH {{ cart.totalPrice() }}</span>
               </div>
             </div>
 
@@ -65,7 +65,8 @@ import { CartService, CartItem } from '../../services/cart.service';
                 <label class="block text-sm text-zinc-400 mb-1">Delivery Address *</label>
                 <textarea [(ngModel)]="form.address" name="address" required rows="3"
                   class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500"
-                  placeholder="Street, City, ZIP, Country"></textarea>
+                  placeholder="Street, City, Area">
+                </textarea>
               </div>
 
               <div>
@@ -102,7 +103,7 @@ import { CartService, CartItem } from '../../services/cart.service';
                 <h3 class="font-semibold text-zinc-300 mb-3">Items Ordered</h3>
                 
                 @for (item of orderedItems; track item.product.id) {
-                  <div class="flex gap-3 mb-3 last:mb-0">
+                  <div class="flex gap-3 mb-3 last:mb-0 items-center">
                     <img [src]="item.product.image" 
                          class="w-14 h-14 object-cover rounded-lg bg-zinc-800"
                          [alt]="item.product.name">
@@ -111,14 +112,14 @@ import { CartService, CartItem } from '../../services/cart.service';
                       <p class="text-zinc-400 text-xs">Qty: {{ item.qty }}</p>
                     </div>
                     <p class="text-emerald-400 font-medium text-sm">
-                      \KSH{{ (item.product.price * item.qty).toFixed(2) }}
+                      KSH {{ item.product.price * item.qty }}
                     </p>
                   </div>
                 }
 
                 <div class="flex justify-between font-bold mt-4 pt-3 border-t border-zinc-700">
                   <span>Total</span>
-                  <span class="text-emerald-400">\KSH{{ orderTotal.toFixed(2) }}</span>
+                  <span class="text-emerald-400">KSH {{ orderTotal }}</span>
                 </div>
               </div>
 
@@ -160,51 +161,53 @@ export class CheckoutModalComponent {
       return;
     }
 
-    // Save order for "My Orders"
-this.cart.saveOrder(
-  {
-    name: this.form.name,
-    email: this.form.email,
-    phone: this.form.phone,
-    address: this.form.address,
-    notes: this.form.notes
-  },
-  this.orderedItems,
-  this.orderTotal
-);
-
     this.loading.set(true);
 
-    // Save ordered items BEFORE clearing the cart
+    // 1. Copy cart data FIRST
     this.orderedItems = [...this.cart.items()];
     this.orderTotal = this.cart.totalPrice();
 
+    // 2. Save order to "My Orders" (with real data)
+    this.cart.saveOrder(
+      {
+        name: this.form.name,
+        email: this.form.email,
+        phone: this.form.phone,
+        address: this.form.address,
+        notes: this.form.notes
+      },
+      this.orderedItems,
+      this.orderTotal
+    );
+
+    // 3. Prepare email data
     const itemsText = this.orderedItems
-      .map(i => `KSH${i.qty}x ${i.product.name} (KSH${i.product.price})`)
+      .map(i => `${i.qty}x ${i.product.name} (KSH ${i.product.price})`)
       .join('\n');
 
     const formData = new FormData();
-    formData.append('_subject', `New PlugYard Order - KSH${this.orderTotal.toFixed(2)}`);
+    formData.append('_subject', `New PlugYard Order - KSH ${this.orderTotal}`);
     formData.append('name', this.form.name);
     formData.append('email', this.form.email);
     formData.append('phone', this.form.phone);
     formData.append('address', this.form.address);
     formData.append('notes', this.form.notes || 'None');
     formData.append('items', itemsText);
-    formData.append('total', `KSH${this.orderTotal.toFixed(2)}`);
+    formData.append('total', `KSH ${this.orderTotal}`);
 
     try {
-      // ⚠️ Replace with your real email
+      // ⚠️ Use your real email here
       await fetch('https://formsubmit.co/ajax/532995f2725a8c447f38569d1fcee84a', {
         method: 'POST',
         body: formData
       });
 
+      // 4. Clear cart and show success
       this.cart.clear();
       this.orderSuccess.set(true);
       this.orderPlaced.emit();
     } catch (err) {
-      alert('Something went wrong. Please try again or contact us directly.');
+      alert('Something went wrong. Please try again or contact us on WhatsApp.');
     } finally {
       this.loading.set(false);
     }
@@ -214,6 +217,7 @@ this.cart.saveOrder(
     this.orderSuccess.set(false);
     this.form = { name: '', email: '', phone: '', address: '', notes: '' };
     this.orderedItems = [];
+    this.orderTotal = 0;
     this.close.emit();
   }
 }
