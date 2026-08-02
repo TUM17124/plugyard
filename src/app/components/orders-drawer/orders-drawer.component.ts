@@ -33,43 +33,55 @@ import { CartService } from '../../services/cart.service';
           } @else {
             @for (order of cart.allOrders(); track order.id) {
               <div class="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+                
+                <!-- Order Header -->
                 <div class="flex justify-between items-start mb-3">
                   <div>
                     <p class="font-semibold text-emerald-400">{{ order.id }}</p>
                     <p class="text-xs text-zinc-500">{{ order.date }}</p>
                   </div>
                   <span 
-  class="text-xs px-2 py-1 rounded-full font-medium"
-  [class.bg-yellow-500/20]="order.status === 'Pending'"
-  [class.text-yellow-400]="order.status === 'Pending'"
-  [class.bg-emerald-500/20]="order.status === 'Received'"
-  [class.text-emerald-400]="order.status === 'Received'"
-  [class.bg-blue-500/20]="order.status === 'Confirmed'"
-  [class.text-blue-400]="order.status === 'Confirmed'"
-  [class.bg-purple-500/20]="order.status === 'Delivered'"
-  [class.text-purple-400]="order.status === 'Delivered'">
-  {{ order.status }}
-</span>
+                    class="text-xs px-2 py-1 rounded-full font-medium"
+                    [class.bg-yellow-500/20]="order.status === 'Pending'"
+                    [class.text-yellow-400]="order.status === 'Pending'"
+                    [class.bg-emerald-500/20]="order.status === 'Received'"
+                    [class.text-emerald-400]="order.status === 'Received'"
+                    [class.bg-blue-500/20]="order.status === 'Confirmed'"
+                    [class.text-blue-400]="order.status === 'Confirmed'"
+                    [class.bg-purple-500/20]="order.status === 'Delivered'"
+                    [class.text-purple-400]="order.status === 'Delivered'">
+                    {{ order.status }}
+                  </span>
                 </div>
 
                 <!-- Items -->
-                <div class="space-y-2 mb-3">
+                <div class="space-y-3 mb-3">
                   @for (item of order.items; track item.product.id) {
-                    <div class="flex gap-3 text-sm">
-                      <img [src]="item.product.image" class="w-12 h-12 object-cover rounded-lg">
-                      <div class="flex-1">
-                        <p class="line-clamp-1">{{ item.product.name }}</p>
+                    <div class="flex gap-3 text-sm items-center">
+                      <img 
+                        [src]="item.product.image" 
+                        [alt]="item.product.name"
+                        class="w-12 h-12 object-cover rounded-lg bg-zinc-800 shrink-0"
+                        onerror="this.src='https://via.placeholder.com/48?text=No+Img'">
+                      
+                      <div class="flex-1 min-w-0">
+                        <p class="line-clamp-1 font-medium">{{ item.product.name }}</p>
                         <p class="text-zinc-400 text-xs">Qty: {{ item.qty }}</p>
                       </div>
-                      <p class="text-emerald-400">\KSH{{ (item.product.price * item.qty).toFixed(2) }}</p>
+                      
+                      <p class="text-emerald-400 font-medium shrink-0">
+                        KSH {{ (item.product.price * item.qty) }}
+                      </p>
                     </div>
                   }
                 </div>
 
+                <!-- Total + Follow Up -->
                 <div class="flex justify-between items-center pt-3 border-t border-zinc-800">
-                  <span class="font-bold">Total: \KSH{{ order.total.toFixed(2) }}</span>
+                  <span class="font-bold">
+                    Total: <span class="text-emerald-400">KSH {{ order.total }}</span>
+                  </span>
                   
-                  <!-- Follow Up Button -->
                   <a 
                     [href]="getWhatsAppLink(order)"
                     target="_blank"
@@ -90,11 +102,10 @@ export class OrdersDrawerComponent {
   isOpen = input(false);
   close = output<void>();
 
-  // Change this number to your WhatsApp business number
-  private whatsappNumber = '254753492246'; // e.g. 254712345678
+  private whatsappNumber = '254753492246';
 
   getWhatsAppLink(order: any): string {
-    const message = `Hi PlugYard, I want to follow up on my order ${order.id}. Total: KSH${order.total.toFixed(2)}`;
+    const message = `Hi PlugYard, I want to follow up on my order ${order.id}. Total: KSH ${order.total}`;
     return `https://wa.me/${this.whatsappNumber}?text=${encodeURIComponent(message)}`;
   }
 }
