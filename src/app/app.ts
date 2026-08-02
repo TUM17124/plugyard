@@ -29,23 +29,36 @@ import { OrdersDrawerComponent } from './components/orders-drawer/orders-drawer.
       (openOrders)="ordersOpen.set(true)"
       (selectCategory)="onCategoryChange($event)" />
 
-    <!-- Hero -->
-    <section class="relative bg-gradient-to-b from-zinc-900 via-zinc-950 to-zinc-950 py-20 sm:py-28 overflow-hidden">
-      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent"></div>
-      <div class="relative max-w-7xl mx-auto px-4 text-center">
-        <h1 class="text-4xl sm:text-6xl font-black tracking-tight mb-4">
-          Premium <span class="text-emerald-400">Smoking</span> Gear
-        </h1>
-        <p class="text-zinc-400 text-lg sm:text-xl max-w-2xl mx-auto mb-8">
-          Vapes • E-Liquids • Bongs • Accessories.<br class="hidden sm:block">
-          Fast delivery. Discreet packaging.
-        </p>
-        <a href="#products" 
-           class="inline-block bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-8 py-3.5 rounded-full transition active:scale-95">
-          Shop Now
-        </a>
-      </div>
-    </section>
+      <!-- Hero -->
+<section class="relative bg-gradient-to-b from-zinc-900 via-zinc-950 to-zinc-950 py-20 sm:py-28 overflow-hidden">
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent"></div>
+  
+  <div class="relative max-w-7xl mx-auto px-4 text-center">
+    <h1 class="text-4xl sm:text-6xl font-black tracking-tight mb-4">
+      Premium <span class="text-emerald-400">Smoking</span> Gear
+    </h1>
+    
+    <p class="text-zinc-400 text-lg sm:text-xl max-w-2xl mx-auto mb-6">
+      Vapes • E-Liquids • Bongs • Accessories.<br class="hidden sm:block">
+      Fast delivery. Discreet packaging.
+    </p>
+
+    <!-- Fargo Delivery Info -->
+    <div class="max-w-xl mx-auto mb-8 bg-zinc-900/60 border border-zinc-800 rounded-2xl px-5 py-4 text-sm text-zinc-300">
+      <p class="font-semibold text-emerald-400 mb-2">🚚 Delivery via Fargo Courier</p>
+      <p class="mb-1">Nairobi & environs: usually within <span class="text-white font-medium">24 hours</span></p>
+      <p class="mb-1">Other major towns: next-day delivery (when order is confirmed in time)</p>
+      <p class="text-zinc-400 text-xs mt-2">
+        Delivery fee confirmed when we contact you (from about <span class="text-white">KES 300</span> in Nairobi)
+      </p>
+    </div>
+
+    <a href="#products" 
+       class="inline-block bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-8 py-3.5 rounded-full transition active:scale-95">
+      Shop Now
+    </a>
+  </div>
+</section>
 
     <div id="products">
       <app-product-grid [selectedCategory]="currentCategory()" />
