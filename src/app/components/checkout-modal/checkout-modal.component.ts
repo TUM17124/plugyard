@@ -2,6 +2,7 @@ import { Component, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CartService, CartItem } from '../../services/cart.service';
+import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-checkout-modal',
@@ -26,12 +27,18 @@ import { CartService, CartItem } from '../../services/cart.service';
             <!-- Order Summary -->
             <div class="p-5 border-b border-zinc-800">
               <h3 class="font-semibold mb-3 text-zinc-300">Order Summary</h3>
-              @for (item of cart.items(); track item.product.id) {
-                <div class="flex justify-between text-sm mb-2">
-                  <span>{{ item.qty }}× {{ item.product.name }}</span>
-                  <span>KSH {{ item.product.price * item.qty }}</span>
-                </div>
-              }
+              @for (item of cart.items(); track item.product.id + (item.flavor || '')) {
+  <div class="flex justify-between text-sm mb-2">
+    <span>
+      {{ item.qty }}× {{ item.product.name }}
+      @if (item.flavor) {
+        <span class="text-zinc-400">({{ item.flavor }})</span>
+      }
+    </span>
+    <span>KSH {{ item.price * item.qty }}</span>
+  </div>
+}
+              
               <div class="flex justify-between font-bold text-lg mt-4 pt-3 border-t border-zinc-800">
                 <span>Total</span>
                 <span class="text-emerald-400">KSH {{ cart.totalPrice() }}</span>
@@ -98,24 +105,24 @@ import { CartService, CartItem } from '../../services/cart.service';
               <h2 class="text-2xl font-bold mb-2">Order Received!</h2>
               <p class="text-zinc-400 mb-6">Thank you {{ form.name }}. We will contact you soon.</p>
 
-              <!-- Ordered Items -->
               <div class="bg-zinc-900 rounded-xl p-4 text-left mb-6">
                 <h3 class="font-semibold text-zinc-300 mb-3">Items Ordered</h3>
                 
-                @for (item of orderedItems; track item.product.id) {
-                  <div class="flex gap-3 mb-3 last:mb-0 items-center">
-                    <img [src]="item.product.image" 
-                         class="w-14 h-14 object-cover rounded-lg bg-zinc-800"
-                         [alt]="item.product.name">
-                    <div class="flex-1">
-                      <p class="font-medium text-sm">{{ item.product.name }}</p>
-                      <p class="text-zinc-400 text-xs">Qty: {{ item.qty }}</p>
-                    </div>
-                    <p class="text-emerald-400 font-medium text-sm">
-                      KSH {{ item.product.price * item.qty }}
-                    </p>
-                  </div>
-                }
+                @for (item of orderedItems; track item.product.id + (item.flavor || '')) {
+  <div class="flex gap-3 mb-3 last:mb-0 items-center">
+    <img [src]="item.product.image" class="w-14 h-14 object-cover rounded-lg bg-zinc-800">
+    <div class="flex-1">
+      <p class="font-medium text-sm">{{ item.product.name }}</p>
+      @if (item.flavor) {
+        <p class="text-emerald-400 text-xs">{{ item.flavor }}</p>
+      }
+      <p class="text-zinc-400 text-xs">Qty: {{ item.qty }}</p>
+    </div>
+    <p class="text-emerald-400 font-medium text-sm">
+      KSH {{ item.price * item.qty }}
+    </p>
+  </div>
+}
 
                 <div class="flex justify-between font-bold mt-4 pt-3 border-t border-zinc-700">
                   <span>Total</span>
@@ -137,6 +144,8 @@ import { CartService, CartItem } from '../../services/cart.service';
 })
 export class CheckoutModalComponent {
   cart = inject(CartService);
+  api = inject(ApiService);
+
   isOpen = input(false);
   close = output<void>();
   orderPlaced = output<void>();
@@ -155,64 +164,48 @@ export class CheckoutModalComponent {
     notes: ''
   };
 
-  async submitOrder() {
-    if (!this.form.name || !this.form.email || !this.form.phone || !this.form.address) {
-      alert('Please fill all required fields');
-      return;
-    }
-
-    this.loading.set(true);
-
-    // 1. Copy cart data FIRST
-    this.orderedItems = [...this.cart.items()];
-    this.orderTotal = this.cart.totalPrice();
-
-    // 2. Save order to "My Orders" (with real data)
-    this.cart.saveOrder(
-      {
-        name: this.form.name,
-        email: this.form.email,
-        phone: this.form.phone,
-        address: this.form.address,
-        notes: this.form.notes
-      },
-      this.orderedItems,
-      this.orderTotal
-    );
-
-    // 3. Prepare email data
-    const itemsText = this.orderedItems
-      .map(i => `${i.qty}x ${i.product.name} (KSH ${i.product.price})`)
-      .join('\n');
-
-    const formData = new FormData();
-    formData.append('_subject', `New PlugYard Order - KSH ${this.orderTotal}`);
-    formData.append('name', this.form.name);
-    formData.append('email', this.form.email);
-    formData.append('phone', this.form.phone);
-    formData.append('address', this.form.address);
-    formData.append('notes', this.form.notes || 'None');
-    formData.append('items', itemsText);
-    formData.append('total', `KSH ${this.orderTotal}`);
-
-    try {
-      // ⚠️ Use your real email here
-      await fetch('https://formsubmit.co/ajax/532995f2725a8c447f38569d1fcee84a', {
-        method: 'POST',
-        body: formData
-      });
-
-      // 4. Clear cart and show success
-      this.cart.clear();
-      this.orderSuccess.set(true);
-      this.orderPlaced.emit();
-    } catch (err) {
-      alert('Something went wrong. Please try again or contact us on WhatsApp.');
-    } finally {
-      this.loading.set(false);
-    }
+  submitOrder() {
+  if (!this.form.name || !this.form.email || !this.form.phone || !this.form.address) {
+    alert('Please fill all required fields');
+    return;
   }
 
+  this.loading.set(true);
+
+  this.orderedItems = [...this.cart.items()];
+  this.orderTotal = this.cart.totalPrice();
+
+  const orderPayload = {
+    name: this.form.name,
+    email: this.form.email,
+    phone: this.form.phone,
+    address: this.form.address,
+    notes: this.form.notes || '',
+    total: this.orderTotal,
+    items: this.orderedItems.map(i => ({
+      product: i.product.id,
+      variant: i.variantId || null,
+      quantity: i.qty,
+      price: i.price,           // use item.price (from selected flavor)
+      flavor: i.flavor || ''
+    }))
+  };
+
+  this.api.createOrder(orderPayload).subscribe({
+  next: () => {
+    this.cart.clear();
+    this.orderSuccess.set(true);
+    this.orderPlaced.emit();
+    this.loading.set(false);
+  },
+  error: (err) => {
+    console.error('Order failed', err);
+    const msg = err?.error?.error || 'Something went wrong. Please try again.';
+    alert(msg);
+    this.loading.set(false);
+  }
+});
+}
   finish() {
     this.orderSuccess.set(false);
     this.form = { name: '', email: '', phone: '', address: '', notes: '' };

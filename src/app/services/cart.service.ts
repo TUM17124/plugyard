@@ -1,24 +1,12 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { Product } from '../data/products';
 
 export interface CartItem {
-  product: Product;
+  product: any;
   qty: number;
-}
-
-export interface Order {
-  id: string;
-  date: string;
-  items: CartItem[];
-  total: number;
-  customer: {
-    name: string;
-    email: string;
-    phone: string;
-    address: string;
-    notes?: string;
-  };
-  status: 'Pending' | 'Received' | 'Confirmed' | 'Delivered';
+  price: number;
+  flavor?: string;
+  variantId?: number;
+  maxStock?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -27,71 +15,93 @@ export class CartService {
     JSON.parse(localStorage.getItem('plugyard-cart') || '[]')
   );
 
-  private orders = signal<Order[]>(
-    JSON.parse(localStorage.getItem('plugyard-orders') || '[]')
-  );
-
   items = this.cart.asReadonly();
-  allOrders = this.orders.asReadonly();
 
   totalItems = computed(() =>
     this.cart().reduce((sum, item) => sum + item.qty, 0)
   );
 
   totalPrice = computed(() =>
-    this.cart().reduce((sum, item) => sum + item.product.price * item.qty, 0)
+    this.cart().reduce((sum, item) => sum + item.price * item.qty, 0)
   );
 
-  add(product: Product, qty = 1) {
+  add(product: any, qty = 1) {
+    const price = product.price ?? product.base_price ?? 0;
+    const flavor = product.flavor || '';
+    const maxStock = product.maxStock ?? product.stock ?? 9999;
+
     const current = [...this.cart()];
-    const existing = current.find(i => i.product.id === product.id);
+    const existing = current.find(
+      i => i.product.id === product.id && (i.flavor || '') === flavor
+    );
 
     if (existing) {
-      existing.qty += qty;
+      const newQty = existing.qty + qty;
+      if (newQty > maxStock) {
+        alert(`Only ${maxStock} left in stock`);
+        existing.qty = maxStock;
+      } else {
+        existing.qty = newQty;
+      }
     } else {
-      current.push({ product, qty });
+      let finalQty = qty;
+      if (qty > maxStock) {
+        alert(`Only ${maxStock} left in stock`);
+        finalQty = maxStock;
+      }
+      current.push({
+        product: {
+          id: product.id,
+          name: product.name,
+          image: product.image,
+          category: product.category
+        },
+        qty: finalQty,
+        price,
+        flavor,
+        variantId: product.variantId,
+        maxStock
+      });
     }
 
     this.cart.set(current);
     this.saveCart();
   }
 
-  updateQty(id: number, qty: number) {
+  updateQty(productId: number, flavor: string, qty: number) {
     if (qty <= 0) {
-      this.remove(id);
+      this.remove(productId, flavor);
       return;
     }
-    const current = this.cart().map(item =>
-      item.product.id === id ? { ...item, qty } : item
-    );
+
+    const current = this.cart().map(item => {
+      if (item.product.id === productId && (item.flavor || '') === (flavor || '')) {
+        const max = item.maxStock ?? 9999;
+        if (qty > max) {
+          alert(`Only ${max} left in stock`);
+          return { ...item, qty: max };
+        }
+        return { ...item, qty };
+      }
+      return item;
+    });
+
     this.cart.set(current);
     this.saveCart();
   }
 
-  remove(id: number) {
-    this.cart.set(this.cart().filter(i => i.product.id !== id));
+  remove(productId: number, flavor: string = '') {
+    this.cart.set(
+      this.cart().filter(
+        i => !(i.product.id === productId && (i.flavor || '') === (flavor || ''))
+      )
+    );
     this.saveCart();
   }
 
   clear() {
     this.cart.set([]);
     this.saveCart();
-  }
-
-  // Save a new order
-  saveOrder(customer: Order['customer'], items: CartItem[], total: number) {
-    const newOrder: Order = {
-      id: 'ORD-' + Date.now().toString().slice(-6),
-      date: new Date().toLocaleString(),
-      items: [...items],
-      total,
-      customer,
-      status: 'Received'
-    };
-
-    const updated = [newOrder, ...this.orders()];
-    this.orders.set(updated);
-    localStorage.setItem('plugyard-orders', JSON.stringify(updated));
   }
 
   private saveCart() {
