@@ -148,35 +148,44 @@ export class ProductDetailComponent implements OnInit {
   selectedVariant = signal<any>(null);
 
   ngOnInit() {
-    this.route.paramMap.subscribe(params => {
-      const id = Number(params.get('id'));
-      if (id) this.loadProduct(id);
-    });
-  }
+  this.route.paramMap.subscribe(params => {
+    const id = Number(params.get('id'));
+    if (id) this.loadProduct(id);
+  });
+}
 
-  loadProduct(id: number) {
-    this.loading.set(true);
-    this.product.set(null);
-    this.selectedVariant.set(null);
+loadProduct(id: number) {
+  // Jump to top immediately when opening / switching product
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 
-    this.api.getProduct(id).subscribe({
-      next: (data) => {
-        this.product.set(data);
-        this.loading.set(false);
+  this.loading.set(true);
+  this.product.set(null);
+  this.similar.set([]);
+  this.selectedVariant.set(null);
 
-        const variants = (data.variants || []).filter(
-          (v: any) => v.is_available && v.stock > 0
-        );
-        if (variants.length) this.selectedVariant.set(variants[0]);
+  this.api.getProduct(id).subscribe({
+    next: (data: any) => {
+      this.product.set(data);
+      this.loading.set(false);
 
-        this.loadSimilar(data.category, data.id);
-      },
-      error: () => {
-        this.loading.set(false);
-        this.product.set(null);
-      }
-    });
-  }
+      const variants = (data.variants || []).filter(
+        (v: any) => v.is_available && v.stock > 0
+      );
+      if (variants.length) this.selectedVariant.set(variants[0]);
+
+      this.loadSimilar(data.category, data.id);
+
+      // Ensure top after content renders
+      setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      }, 0);
+    },
+    error: () => {
+      this.loading.set(false);
+      this.product.set(null);
+    }
+  });
+}
 
   loadSimilar(category: string, excludeId: number) {
     this.api.getProducts({ category, page: 1 }).subscribe({
