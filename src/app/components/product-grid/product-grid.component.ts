@@ -44,11 +44,6 @@ import { ApiService } from '../../services/api.service';
       } @else if (!loading() && products().length === 0) {
         <div class="text-center py-20 text-zinc-500">
           <p class="text-lg">No products found</p>
-          <button
-            (click)="loadRecommended()"
-            class="mt-4 text-emerald-400 hover:underline text-sm">
-            Back to Home
-          </button>
         </div>
       } @else {
         <!-- Product grid -->
