@@ -14,11 +14,12 @@ import {
 import { CommonModule } from '@angular/common';
 import { CartService } from '../../services/cart.service';
 import { ApiService } from '../../services/api.service';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-product-grid',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
     <section id="product-list" class="max-w-7xl mx-auto px-4 sm:px-6 py-12">
 
@@ -49,21 +50,25 @@ import { ApiService } from '../../services/api.service';
         <!-- Product grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           @for (product of products(); track product.id) {
-            <div class="group bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1">
-              <div class="aspect-square overflow-hidden bg-zinc-800">
-                <img
-                  [src]="product.image"
-                  [alt]="product.name"
-                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  loading="lazy">
-              </div>
+  <div class="group bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1">
+    <a [routerLink]="['/product', product.id]" class="block">
+      <div class="aspect-square overflow-hidden bg-zinc-800">
+        <img
+          [src]="product.image"
+          [alt]="product.name"
+          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          loading="lazy">
+      </div>
+    </a>
 
-              <div class="p-4">
-                <p class="text-xs uppercase tracking-wider text-emerald-400 mb-1">
-                  {{ categoryLabel(product.category) }}
-                </p>
-                <h3 class="font-semibold text-base mb-1 line-clamp-1">{{ product.name }}</h3>
-                <p class="text-zinc-400 text-xs mb-3 line-clamp-2">{{ product.description }}</p>
+    <div class="p-4">
+      <a [routerLink]="['/product', product.id]">
+        <p class="text-xs uppercase tracking-wider text-emerald-400 mb-1">
+          {{ categoryLabel(product.category) }}
+        </p>
+        <h3 class="font-semibold text-base mb-1 line-clamp-1">{{ product.name }}</h3>
+      </a>
+      <p class="text-zinc-400 text-xs mb-3 line-clamp-2">{{ product.description }}</p>
 
                 <div class="flex items-center justify-between gap-2">
                   <div>

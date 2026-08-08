@@ -36,6 +36,10 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/orders/`, order);
   }
 
+  getProduct(id: number) {
+  return this.http.get<any>(`${this.baseUrl}/products/${id}/`);
+}
+
   getMyOrders(phone: string): Observable<any[]> {
     return this.http.get<any[]>(
       `${this.baseUrl}/my-orders/?phone=${encodeURIComponent(phone)}`
