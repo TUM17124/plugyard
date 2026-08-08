@@ -1,6 +1,7 @@
-import { Component, input, ViewChild } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductGridComponent } from '../../components/product-grid/product-grid.component';
+import { ShopFilterService } from '../../services/shop-filter.service';
 
 @Component({
   selector: 'app-home',
@@ -16,13 +17,28 @@ import { ProductGridComponent } from '../../components/product-grid/product-grid
           Kenya's Trusted
           <span class="text-emerald-400">Vape & Smoke Shop</span>
         </h1>
+
         <p class="text-zinc-300 text-lg sm:text-xl max-w-3xl mx-auto leading-8 mb-8">
           Discover a premium collection of authentic disposable vapes, refillable
           vape kits, e-liquids, bongs, hookahs, rolling papers, grinders,
           glassware, cigars, smoking accessories, and much more.
         </p>
-        <a href="#products"
-           class="inline-block bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-10 py-4 rounded-full text-lg transition">
+
+        <p class="text-zinc-400 text-base sm:text-lg max-w-3xl mx-auto leading-8 mb-10">
+          Shop with confidence, enjoy discreet packaging, secure ordering, and
+          fast delivery across Nairobi and other major towns in Kenya.
+        </p>
+
+        <div class="max-w-2xl mx-auto mb-10 text-zinc-300 text-sm">
+          <p class="text-emerald-400 font-bold text-lg mb-3">🚚 Fast Delivery via Fargo Courier</p>
+          <p class="mb-2">✓ Nairobi: usually within <span class="text-white font-semibold">24 hours</span></p>
+          <p class="mb-2">✓ Other major towns: next-day when confirmed in time</p>
+          <p class="text-zinc-400 text-xs mt-2">Delivery fee from about KES 300 in Nairobi</p>
+        </div>
+
+        <a
+          href="#products"
+          class="inline-block bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-10 py-4 rounded-full text-lg transition active:scale-95">
           Shop Now
         </a>
       </div>
@@ -30,18 +46,11 @@ import { ProductGridComponent } from '../../components/product-grid/product-grid
 
     <div id="products">
       <app-product-grid
-        [selectedCategory]="selectedCategory()"
-        [searchQuery]="searchQuery()" />
+        [selectedCategory]="filters.category()"
+        [searchQuery]="filters.search()" />
     </div>
   `
 })
 export class HomeComponent {
-  selectedCategory = input<string>('recommended');
-  searchQuery = input<string>('');
-
-  @ViewChild(ProductGridComponent) productGrid?: ProductGridComponent;
-
-  reload() {
-    this.productGrid?.reload();
-  }
+  filters = inject(ShopFilterService);
 }
