@@ -1,15 +1,9 @@
 import { Routes } from '@angular/router';
 import { ProductDetailComponent } from './components/product-detail/product-detail.component';
+import { HomeComponent } from './pages/home/home.component';
 
 export const routes: Routes = [
-  {
-    path: 'product/:id',
-    component: ProductDetailComponent
-  },
-  {
-    path: '',
-    // your home is app component content — or use a HomeComponent
-    pathMatch: 'full',
-    children: [] // if home stays in App component, see step 4
-  }
+  { path: '', component: HomeComponent },
+  { path: 'product/:id', component: ProductDetailComponent },
+  { path: '**', redirectTo: '' }
 ];
