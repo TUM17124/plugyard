@@ -47,7 +47,7 @@ import { ApiService } from '../../services/api.service';
           <button
             (click)="loadRecommended()"
             class="mt-4 text-emerald-400 hover:underline text-sm">
-            Back to Recommended
+            Back to Home
           </button>
         </div>
       } @else {
