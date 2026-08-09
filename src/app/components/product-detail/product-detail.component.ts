@@ -1,4 +1,11 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  signal,
+  ElementRef,
+  viewChild
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CartService } from '../../services/cart.service';
@@ -123,19 +130,37 @@ import { ApiService } from '../../services/api.service';
             </div>
           </div>
 
-          <!-- Similar products: horizontal swipe + cart actions -->
+          <!-- Similar products -->
           @if (similar().length > 0) {
             <div class="border-t border-zinc-800 pt-12">
               <div class="flex items-center justify-between mb-4">
                 <h2 class="text-2xl font-bold">Similar products</h2>
-                <p class="text-zinc-500 text-sm hidden sm:block">Swipe →</p>
+
+                <div class="hidden sm:flex items-center gap-2">
+                  <button
+                    type="button"
+                    (click)="scrollSimilar(-1)"
+                    class="w-9 h-9 rounded-full border border-zinc-700 hover:border-emerald-500 hover:text-emerald-400 flex items-center justify-center text-xl transition"
+                    aria-label="Scroll left">
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    (click)="scrollSimilar(1)"
+                    class="w-9 h-9 rounded-full border border-zinc-700 hover:border-emerald-500 hover:text-emerald-400 flex items-center justify-center text-xl transition"
+                    aria-label="Scroll right">
+                    ›
+                  </button>
+                </div>
               </div>
 
               <div class="relative">
                 <div class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-zinc-950 to-transparent z-10 pointer-events-none"></div>
                 <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-zinc-950 to-transparent z-10 pointer-events-none"></div>
 
-                <div class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
+                <div
+                  #similarRow
+                  class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory similar-scroll">
                   @for (p of similar(); track p.id) {
                     <div class="snap-start shrink-0 w-64 sm:w-72 group bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-emerald-500/50 transition">
                       <a [routerLink]="['/product', p.id]" class="block">
@@ -250,10 +275,29 @@ import { ApiService } from '../../services/api.service';
     }
   `,
   styles: [`
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
+    @media (max-width: 639px) {
+      .similar-scroll::-webkit-scrollbar { display: none; }
+      .similar-scroll {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    }
+
+    @media (min-width: 640px) {
+      .similar-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #3f3f46 transparent;
+      }
+      .similar-scroll::-webkit-scrollbar {
+        height: 8px;
+      }
+      .similar-scroll::-webkit-scrollbar-thumb {
+        background: #3f3f46;
+        border-radius: 999px;
+      }
+      .similar-scroll::-webkit-scrollbar-track {
+        background: transparent;
+      }
     }
   `]
 })
@@ -263,14 +307,14 @@ export class ProductDetailComponent implements OnInit {
   private api = inject(ApiService);
   private cart = inject(CartService);
 
+  similarRow = viewChild<ElementRef<HTMLDivElement>>('similarRow');
+
   product = signal<any>(null);
   similar = signal<any[]>([]);
   loading = signal(true);
 
-  // Main product flavor
   mainVariant = signal<any>(null);
 
-  // Similar product flavor modal
   showFlavorModal = signal(false);
   pickerProduct = signal<any>(null);
   pickerVariant = signal<any>(null);
@@ -280,6 +324,12 @@ export class ProductDetailComponent implements OnInit {
       const id = Number(params.get('id'));
       if (id) this.loadProduct(id);
     });
+  }
+
+  scrollSimilar(direction: number) {
+    const el = this.similarRow()?.nativeElement;
+    if (!el) return;
+    el.scrollBy({ left: direction * 320, behavior: 'smooth' });
   }
 
   loadProduct(id: number) {
