@@ -43,7 +43,7 @@ import { ApiService } from '../../services/api.service';
               <img
                 [src]="product().image"
                 [alt]="product().name"
-                class="w-full h-full object-cover">
+                class="w-full h-full object-contain">
             </div>
 
             <div class="flex flex-col">
