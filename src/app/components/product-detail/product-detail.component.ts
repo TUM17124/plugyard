@@ -128,10 +128,7 @@ import { ApiService } from '../../services/api.service';
             <div class="border-t border-zinc-800 pt-12">
               <div class="flex items-center justify-between mb-4">
                 <h2 class="text-2xl font-bold">Similar products</h2>
-                <p class="text-zinc-500 text-sm hidden sm:block">Swipe →</p> <br>
-              <p class="text-[10px] text-zinc-600 mt-2 sm:hidden text-center">
-                ← Swipe to see more similar products →
-              </p>                
+                <p class="text-zinc-500 text-sm hidden sm:block">Swipe →</p>
               </div>
 
               <div class="relative">
@@ -195,7 +192,9 @@ import { ApiService } from '../../services/api.service';
                 </div>
               </div>
 
-
+              <p class="text-[10px] text-zinc-600 mt-2 sm:hidden text-center">
+                ← Swipe to see more similar products →
+              </p>
             </div>
           }
         }
