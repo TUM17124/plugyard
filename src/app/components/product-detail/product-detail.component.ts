@@ -2,10 +2,10 @@ import {
   Component,
   inject,
   OnInit,
+  OnDestroy,
   signal,
   ElementRef,
-  viewChild,
-  HostListener
+  viewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -153,19 +153,14 @@ import { ApiService } from '../../services/api.service';
                 <div class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-zinc-950 to-transparent z-10 pointer-events-none"></div>
                 <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-zinc-950 to-transparent z-10 pointer-events-none"></div>
 
+                <!-- similar row: wheel + drag -->
                 <div
                   #similarRow
-                  class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory similar-scroll select-none"
-                  (wheel)="onWheel($event)"
-                  (mousedown)="onMouseDown($event)"
-                  (mousemove)="onMouseMove($event)"
-                  (mouseup)="onMouseUp()"
-                  (mouseleave)="onMouseUp()">
+                  class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory similar-scroll"
+                  [class.is-dragging]="dragging">
                   @for (p of similar(); track p.id) {
-                    <div
-                      class="snap-start shrink-0 w-64 sm:w-72 group bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-emerald-500/50 transition"
-                      [class.pointer-events-none]="isDragging()">
-                      <a [routerLink]="['/product', p.id]" class="block">
+                    <div class="snap-start shrink-0 w-64 sm:w-72 group bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-emerald-500/50 transition">
+                      <a [routerLink]="['/product', p.id]" class="block" (click)="onCardClick($event)">
                         <div class="aspect-square overflow-hidden bg-zinc-800">
                           <img
                             [src]="p.image"
@@ -177,7 +172,7 @@ import { ApiService } from '../../services/api.service';
                       </a>
 
                       <div class="p-4">
-                        <a [routerLink]="['/product', p.id]">
+                        <a [routerLink]="['/product', p.id]" (click)="onCardClick($event)">
                           <p class="text-xs text-emerald-400 uppercase mb-1">{{ categoryLabel(p.category) }}</p>
                           <h3 class="font-semibold line-clamp-1 mb-1">{{ p.name }}</h3>
                         </a>
@@ -222,7 +217,7 @@ import { ApiService } from '../../services/api.service';
 
               <p class="text-[10px] text-zinc-500 mt-2 text-center sm:text-left">
                 <span class="sm:hidden">← Swipe to see more →</span>
-                <span class="hidden sm:inline">Drag with mouse, use scroll wheel, scrollbar, or arrows →</span>
+                <span class="hidden sm:inline">Scroll wheel, drag, scrollbar, or arrows →</span>
               </p>
             </div>
           }
@@ -284,8 +279,9 @@ import { ApiService } from '../../services/api.service';
       scrollbar-color: #52525b transparent;
     }
 
-    .similar-scroll:active {
+    .similar-scroll.is-dragging {
       cursor: grabbing;
+      scroll-behavior: auto;
     }
 
     .similar-scroll::-webkit-scrollbar {
@@ -301,15 +297,9 @@ import { ApiService } from '../../services/api.service';
       background: #18181b;
       border-radius: 999px;
     }
-
-    @media (max-width: 639px) {
-      .similar-scroll {
-        cursor: default;
-      }
-    }
   `]
 })
-export class ProductDetailComponent implements OnInit {
+export class ProductDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private api = inject(ApiService);
@@ -327,11 +317,15 @@ export class ProductDetailComponent implements OnInit {
   pickerProduct = signal<any>(null);
   pickerVariant = signal<any>(null);
 
-  // Mouse drag state
-  isDragging = signal(false);
-  private dragStartX = 0;
-  private scrollStartLeft = 0;
-  private didDrag = false;
+  // Drag state (plain fields — always cleared)
+  dragging = false;
+  private moved = false;
+  private startX = 0;
+  private startScroll = 0;
+
+  private onMove = (e: MouseEvent) => this.handleMove(e);
+  private onUp = () => this.endDrag();
+  private onWheelBound = (e: WheelEvent) => this.handleWheel(e);
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
@@ -340,52 +334,112 @@ export class ProductDetailComponent implements OnInit {
     });
   }
 
-  /** Mouse wheel → horizontal scroll */
-  onWheel(event: WheelEvent) {
+  ngOnDestroy() {
+    this.teardownDragListeners();
+    this.teardownWheel();
+  }
+
+  /** Attach wheel + drag after similar row exists */
+  private setupRowInteractions() {
+    setTimeout(() => {
+      const el = this.similarRow()?.nativeElement;
+      if (!el) return;
+
+      // Wheel: always works (re-bind cleanly)
+      el.removeEventListener('wheel', this.onWheelBound as EventListener);
+      el.addEventListener('wheel', this.onWheelBound as EventListener, { passive: false });
+
+      el.onmousedown = (e: MouseEvent) => this.startDrag(e);
+    }, 0);
+  }
+
+  private teardownWheel() {
+    const el = this.similarRow()?.nativeElement;
+    if (!el) return;
+    el.removeEventListener('wheel', this.onWheelBound as EventListener);
+    el.onmousedown = null;
+  }
+
+  private handleWheel(e: WheelEvent) {
     const el = this.similarRow()?.nativeElement;
     if (!el) return;
 
-    // Convert vertical wheel to horizontal scroll
-    if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
-      event.preventDefault();
-      el.scrollLeft += event.deltaY;
+    // Always allow horizontal scroll via wheel
+    if (Math.abs(e.deltaY) >= Math.abs(e.deltaX)) {
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    } else {
+      el.scrollLeft += e.deltaX;
     }
   }
 
-  /** Click-and-drag scroll */
-  onMouseDown(event: MouseEvent) {
+  private startDrag(e: MouseEvent) {
+    // Only left mouse button
+    if (e.button !== 0) return;
+
     const el = this.similarRow()?.nativeElement;
     if (!el) return;
 
-    this.isDragging.set(true);
-    this.didDrag = false;
-    this.dragStartX = event.pageX;
-    this.scrollStartLeft = el.scrollLeft;
+    this.dragging = true;
+    this.moved = false;
+    this.startX = e.pageX;
+    this.startScroll = el.scrollLeft;
+
+    // Document-level so mouseup outside still ends drag
+    document.addEventListener('mousemove', this.onMove);
+    document.addEventListener('mouseup', this.onUp);
+    document.addEventListener('mouseleave', this.onUp);
+
+    e.preventDefault();
   }
 
-  onMouseMove(event: MouseEvent) {
-    if (!this.isDragging()) return;
+  private handleMove(e: MouseEvent) {
+    if (!this.dragging) return;
+
     const el = this.similarRow()?.nativeElement;
     if (!el) return;
 
-    const dx = event.pageX - this.dragStartX;
-    if (Math.abs(dx) > 5) this.didDrag = true;
+    const dx = e.pageX - this.startX;
+    if (Math.abs(dx) > 4) this.moved = true;
 
-    el.scrollLeft = this.scrollStartLeft - dx;
+    el.scrollLeft = this.startScroll - dx;
   }
 
-  onMouseUp() {
-    this.isDragging.set(false);
+  private endDrag() {
+    this.dragging = false;
+    this.teardownDragListeners();
+
+    // Small delay so click after drag doesn't navigate
+    setTimeout(() => {
+      this.moved = false;
+    }, 50);
+  }
+
+  private teardownDragListeners() {
+    document.removeEventListener('mousemove', this.onMove);
+    document.removeEventListener('mouseup', this.onUp);
+    document.removeEventListener('mouseleave', this.onUp);
+  }
+
+  /** Block link navigation if user was dragging */
+  onCardClick(e: Event) {
+    if (this.moved || this.dragging) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
   }
 
   scrollSimilar(direction: number) {
     const el = this.similarRow()?.nativeElement;
     if (!el) return;
+    this.endDrag(); // ensure clean state
     el.scrollBy({ left: direction * 320, behavior: 'smooth' });
   }
 
   loadProduct(id: number) {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    this.endDrag();
+    this.teardownWheel();
 
     this.loading.set(true);
     this.product.set(null);
@@ -423,6 +477,7 @@ export class ProductDetailComponent implements OnInit {
           .filter((p: any) => p.id !== excludeId)
           .slice(0, 8);
         this.similar.set(items);
+        this.setupRowInteractions(); // re-bind wheel + drag after DOM updates
       },
       error: () => this.similar.set([])
     });
