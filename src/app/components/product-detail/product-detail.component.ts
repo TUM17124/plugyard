@@ -165,7 +165,7 @@ import { ApiService } from '../../services/api.service';
                           <img
                             [src]="p.image"
                             [alt]="p.name"
-                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
                             loading="lazy"
                             draggable="false">
                         </div>

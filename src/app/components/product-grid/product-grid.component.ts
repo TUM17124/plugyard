@@ -53,7 +53,7 @@ import { ApiService } from '../../services/api.service';
                   <img
                     [src]="product.image"
                     [alt]="product.name"
-                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
                     loading="lazy">
                 </div>
               </a>
