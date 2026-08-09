@@ -31,12 +31,12 @@ import { ShopFilterService } from '../../services/shop-filter.service';
             fast delivery across Nairobi and other major towns in Kenya.
           </p>
 
-          <div class="max-w-2xl mx-auto mb-10 text-zinc-300 text-sm">
+         <!-- <div class="max-w-2xl mx-auto mb-10 text-zinc-300 text-sm">
             <p class="text-emerald-400 font-bold text-lg mb-3">🚚 Fast Delivery via Fargo Courier</p>
             <p class="mb-2">✓ Nairobi: usually within <span class="text-white font-semibold">24 hours</span></p>
             <p class="mb-2">✓ Other major towns: next-day when confirmed in time</p>
             <p class="text-zinc-400 text-xs mt-2">Delivery fee from about KES 300 in Nairobi</p>
-          </div>
+          </div>  -->
 
           <a
             href="#products"
