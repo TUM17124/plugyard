@@ -136,6 +136,19 @@ export class App {
   }
 
   onOrderPlaced() {
-    // optional: refresh products later
-  }
+  setTimeout(() => {
+    const match = this.router.url.match(/\/product\/(\d+)/);
+    if (match) {
+      const id = match[1];
+      this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+        this.router.navigate(['/product', id]);
+      });
+    } else {
+      // Home: refresh category filter so product grid reloads
+      const cat = this.filters.category() || 'recommended';
+      this.filters.setCategory('');
+      setTimeout(() => this.filters.setCategory(cat), 0);
+    }
+  }, 1000);
+}
 }

@@ -110,7 +110,7 @@ import { ApiService } from '../../services/api.service';
                 
                 @for (item of orderedItems; track item.product.id + (item.flavor || '')) {
   <div class="flex gap-3 mb-3 last:mb-0 items-center">
-    <img [src]="item.product.image" class="w-14 h-14 object-cover rounded-lg bg-zinc-800">
+    <img [src]="item.product.image" class="w-14 h-14 object-contain rounded-lg bg-zinc-800">
     <div class="flex-1">
       <p class="font-medium text-sm">{{ item.product.name }}</p>
       @if (item.flavor) {
