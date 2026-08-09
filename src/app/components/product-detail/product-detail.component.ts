@@ -4,7 +4,8 @@ import {
   OnInit,
   signal,
   ElementRef,
-  viewChild
+  viewChild,
+  HostListener
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -36,7 +37,6 @@ import { ApiService } from '../../services/api.service';
             </a>
           </div>
         } @else {
-          <!-- Main product -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
 
             <div class="aspect-square rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800">
@@ -101,9 +101,7 @@ import { ApiService } from '../../services/api.service';
 
               <div class="mt-auto pt-2">
                 @if (!isInStock(product())) {
-                  <button
-                    type="button"
-                    disabled
+                  <button type="button" disabled
                     class="w-full sm:w-auto bg-zinc-700 text-zinc-400 font-bold px-8 py-3.5 rounded-full cursor-not-allowed">
                     Sold Out
                   </button>
@@ -130,7 +128,6 @@ import { ApiService } from '../../services/api.service';
             </div>
           </div>
 
-          <!-- Similar products -->
           @if (similar().length > 0) {
             <div class="border-t border-zinc-800 pt-12">
               <div class="flex items-center justify-between mb-4">
@@ -140,15 +137,13 @@ import { ApiService } from '../../services/api.service';
                   <button
                     type="button"
                     (click)="scrollSimilar(-1)"
-                    class="w-9 h-9 rounded-full border border-zinc-700 hover:border-emerald-500 hover:text-emerald-400 flex items-center justify-center text-xl transition"
-                    aria-label="Scroll left">
+                    class="w-9 h-9 rounded-full border border-zinc-700 hover:border-emerald-500 hover:text-emerald-400 flex items-center justify-center text-xl transition">
                     ‹
                   </button>
                   <button
                     type="button"
                     (click)="scrollSimilar(1)"
-                    class="w-9 h-9 rounded-full border border-zinc-700 hover:border-emerald-500 hover:text-emerald-400 flex items-center justify-center text-xl transition"
-                    aria-label="Scroll right">
+                    class="w-9 h-9 rounded-full border border-zinc-700 hover:border-emerald-500 hover:text-emerald-400 flex items-center justify-center text-xl transition">
                     ›
                   </button>
                 </div>
@@ -160,16 +155,24 @@ import { ApiService } from '../../services/api.service';
 
                 <div
                   #similarRow
-                  class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory similar-scroll">
+                  class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory similar-scroll select-none"
+                  (wheel)="onWheel($event)"
+                  (mousedown)="onMouseDown($event)"
+                  (mousemove)="onMouseMove($event)"
+                  (mouseup)="onMouseUp()"
+                  (mouseleave)="onMouseUp()">
                   @for (p of similar(); track p.id) {
-                    <div class="snap-start shrink-0 w-64 sm:w-72 group bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-emerald-500/50 transition">
+                    <div
+                      class="snap-start shrink-0 w-64 sm:w-72 group bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-emerald-500/50 transition"
+                      [class.pointer-events-none]="isDragging()">
                       <a [routerLink]="['/product', p.id]" class="block">
                         <div class="aspect-square overflow-hidden bg-zinc-800">
                           <img
                             [src]="p.image"
                             [alt]="p.name"
                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            loading="lazy">
+                            loading="lazy"
+                            draggable="false">
                         </div>
                       </a>
 
@@ -217,8 +220,9 @@ import { ApiService } from '../../services/api.service';
                 </div>
               </div>
 
-              <p class="text-[10px] text-zinc-600 mt-2 sm:hidden text-center">
-                ← Swipe to see more similar products →
+              <p class="text-[10px] text-zinc-500 mt-2 text-center sm:text-left">
+                <span class="sm:hidden">← Swipe to see more →</span>
+                <span class="hidden sm:inline">Drag with mouse, use scroll wheel, scrollbar, or arrows →</span>
               </p>
             </div>
           }
@@ -226,7 +230,6 @@ import { ApiService } from '../../services/api.service';
       </div>
     </div>
 
-    <!-- Flavor modal for similar products -->
     @if (showFlavorModal()) {
       <div
         class="fixed inset-0 bg-black/70 z-[80] flex items-center justify-center p-4"
@@ -275,28 +278,33 @@ import { ApiService } from '../../services/api.service';
     }
   `,
   styles: [`
-    @media (max-width: 639px) {
-      .similar-scroll::-webkit-scrollbar { display: none; }
-      .similar-scroll {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
+    .similar-scroll {
+      cursor: grab;
+      scrollbar-width: thin;
+      scrollbar-color: #52525b transparent;
     }
 
-    @media (min-width: 640px) {
+    .similar-scroll:active {
+      cursor: grabbing;
+    }
+
+    .similar-scroll::-webkit-scrollbar {
+      height: 10px;
+    }
+
+    .similar-scroll::-webkit-scrollbar-thumb {
+      background: #52525b;
+      border-radius: 999px;
+    }
+
+    .similar-scroll::-webkit-scrollbar-track {
+      background: #18181b;
+      border-radius: 999px;
+    }
+
+    @media (max-width: 639px) {
       .similar-scroll {
-        scrollbar-width: thin;
-        scrollbar-color: #3f3f46 transparent;
-      }
-      .similar-scroll::-webkit-scrollbar {
-        height: 8px;
-      }
-      .similar-scroll::-webkit-scrollbar-thumb {
-        background: #3f3f46;
-        border-radius: 999px;
-      }
-      .similar-scroll::-webkit-scrollbar-track {
-        background: transparent;
+        cursor: default;
       }
     }
   `]
@@ -319,11 +327,55 @@ export class ProductDetailComponent implements OnInit {
   pickerProduct = signal<any>(null);
   pickerVariant = signal<any>(null);
 
+  // Mouse drag state
+  isDragging = signal(false);
+  private dragStartX = 0;
+  private scrollStartLeft = 0;
+  private didDrag = false;
+
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
       const id = Number(params.get('id'));
       if (id) this.loadProduct(id);
     });
+  }
+
+  /** Mouse wheel → horizontal scroll */
+  onWheel(event: WheelEvent) {
+    const el = this.similarRow()?.nativeElement;
+    if (!el) return;
+
+    // Convert vertical wheel to horizontal scroll
+    if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+      event.preventDefault();
+      el.scrollLeft += event.deltaY;
+    }
+  }
+
+  /** Click-and-drag scroll */
+  onMouseDown(event: MouseEvent) {
+    const el = this.similarRow()?.nativeElement;
+    if (!el) return;
+
+    this.isDragging.set(true);
+    this.didDrag = false;
+    this.dragStartX = event.pageX;
+    this.scrollStartLeft = el.scrollLeft;
+  }
+
+  onMouseMove(event: MouseEvent) {
+    if (!this.isDragging()) return;
+    const el = this.similarRow()?.nativeElement;
+    if (!el) return;
+
+    const dx = event.pageX - this.dragStartX;
+    if (Math.abs(dx) > 5) this.didDrag = true;
+
+    el.scrollLeft = this.scrollStartLeft - dx;
+  }
+
+  onMouseUp() {
+    this.isDragging.set(false);
   }
 
   scrollSimilar(direction: number) {
