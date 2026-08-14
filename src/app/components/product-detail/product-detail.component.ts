@@ -39,11 +39,12 @@ import { ApiService } from '../../services/api.service';
         } @else {
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
 
-<div class="aspect-square rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 flex items-center justify-center">
+<div class="aspect-square rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 flex items-center justify-center relative">
   <img
     [src]="displayImage()"
     [alt]="product().name"
-    class="w-full h-full object-contain transition-opacity duration-300">
+    [class.img-swap]="imagePulse()"
+    class="w-full h-full object-contain transition-all duration-300">
 </div>
             <div class="flex flex-col">
               <p class="text-xs uppercase tracking-wider text-emerald-400 mb-2">
@@ -76,27 +77,35 @@ import { ApiService } from '../../services/api.service';
               </div>
 
               @if (hasFlavors(product())) {
-                <div class="mb-6">
-                  <h2 class="font-semibold text-lg mb-3">Choose flavor</h2>
-                  <div class="space-y-2">
-                    @for (v of availableVariants(); track v.id) {
-                      <button
-                        type="button"
-                        (click)="mainVariant.set(v)"
-                        class="w-full text-left px-4 py-3 rounded-xl border transition"
-                        [class.border-emerald-500]="mainVariant()?.id === v.id"
-                        [class.bg-emerald-500/10]="mainVariant()?.id === v.id"
-                        [class.border-zinc-700]="mainVariant()?.id !== v.id">
-                        <div class="flex justify-between">
-                          <span>{{ v.flavor }}</span>
-                          <span class="text-emerald-400">KSH {{ v.price }}</span>
-                        </div>
-                        <p class="text-xs text-zinc-500 mt-1">{{ v.stock }} in stock</p>
-                      </button>
-                    }
-                  </div>
-                </div>
-              }
+  <div class="mb-6">
+    <h2 class="font-semibold text-lg mb-3">Choose flavor</h2>
+    <div class="space-y-2">
+      @for (v of availableVariants(); track v.id) {
+        <button
+          type="button"
+          (click)="selectFlavor(v)"
+          class="w-full text-left px-3 py-3 rounded-xl border transition flex gap-3 items-center"
+          [class.border-emerald-500]="mainVariant()?.id === v.id"
+          [class.bg-emerald-500/10]="mainVariant()?.id === v.id"
+          [class.ring-2]="mainVariant()?.id === v.id"
+          [class.ring-emerald-500/40]="mainVariant()?.id === v.id"
+          [class.border-zinc-700]="mainVariant()?.id !== v.id">
+          <img
+            [src]="v.image || product().image"
+            [alt]="v.flavor"
+            class="w-14 h-14 sm:w-12 sm:h-12 rounded-lg object-contain bg-zinc-800 shrink-0 border border-zinc-700">
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between gap-2">
+              <span class="font-medium">{{ v.flavor }}</span>
+              <span class="text-emerald-400 shrink-0">KSH {{ v.price }}</span>
+            </div>
+            <p class="text-xs text-zinc-500 mt-1">{{ v.stock }} in stock</p>
+          </div>
+        </button>
+      }
+    </div>
+  </div>
+}
 
               <div class="mt-auto pt-2">
                 @if (!isInStock(product())) {
@@ -225,57 +234,69 @@ import { ApiService } from '../../services/api.service';
     </div>
 
     @if (showFlavorModal()) {
-      <div
-        class="fixed inset-0 bg-black/70 z-[80] flex items-center justify-center p-4"
-        (click)="closeFlavorPicker()">
-        <div
-          class="bg-zinc-950 border border-zinc-700 rounded-2xl w-full max-w-sm p-5"
-          (click)="$event.stopPropagation()">
-          <h3 class="text-lg font-bold mb-1">{{ pickerProduct()?.name }}</h3>
-          <p class="text-zinc-400 text-sm mb-4">Choose your option</p>
+  <div
+    class="fixed inset-0 bg-black/70 z-[80] flex items-center justify-center p-4"
+    (click)="closeFlavorPicker()">
+    <div
+      class="bg-zinc-950 border border-zinc-700 rounded-2xl w-full max-w-sm max-h-[90vh] flex flex-col"
+      (click)="$event.stopPropagation()">
 
-          <div class="space-y-2 mb-5 max-h-60 overflow-y-auto">
-            @for (v of pickerVariants(); track v.id) {
-              <button
-  type="button"
-  (click)="mainVariant.set(v)"
-  class="w-full text-left px-4 py-3 rounded-xl border transition flex gap-3 items-center"
-  [class.border-emerald-500]="mainVariant()?.id === v.id"
-  [class.bg-emerald-500/10]="mainVariant()?.id === v.id"
-  [class.border-zinc-700]="mainVariant()?.id !== v.id">
-  @if (v.image) {
-    <img [src]="v.image" [alt]="v.flavor"
-         class="w-12 h-12 rounded-lg object-contain bg-zinc-800 shrink-0">
-  }
-  <div class="flex-1 min-w-0">
-    <div class="flex justify-between gap-2">
-      <span class="font-medium">{{ v.flavor }}</span>
-      <span class="text-emerald-400 shrink-0">KSH {{ v.price }}</span>
-    </div>
-    <p class="text-xs text-zinc-500 mt-1">{{ v.stock }} in stock</p>
-  </div>
-</button>
-            }
-          </div>
+      <div class="p-5 pb-0 shrink-0">
+        <h3 class="text-lg font-bold mb-1">{{ pickerProduct()?.name }}</h3>
+        <p class="text-zinc-400 text-sm mb-3">Choose your option</p>
+      </div>
 
-          <div class="flex gap-3">
-            <button
-              type="button"
-              (click)="closeFlavorPicker()"
-              class="flex-1 border border-zinc-700 hover:border-zinc-500 py-2.5 rounded-xl text-sm transition">
-              Cancel
-            </button>
-            <button
-              type="button"
-              (click)="confirmFlavorAdd()"
-              [disabled]="!pickerVariant()"
-              class="flex-1 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-black font-bold py-2.5 rounded-xl text-sm transition">
-              Add to Cart
-            </button>
-          </div>
+      <div class="px-5 shrink-0">
+        <div class="h-36 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-3">
+          <img
+            [src]="pickerVariant()?.image || pickerProduct()?.image"
+            [alt]="pickerVariant()?.flavor || pickerProduct()?.name"
+            class="max-h-full max-w-full object-contain">
         </div>
       </div>
-    }
+
+      <div class="flex-1 min-h-0 overflow-y-auto px-5 space-y-2">
+        @for (v of pickerVariants(); track v.id) {
+          <button
+            type="button"
+            (click)="pickerVariant.set(v)"
+            class="w-full text-left px-4 py-3 rounded-xl border transition flex gap-3 items-center"
+            [class.border-emerald-500]="pickerVariant()?.id === v.id"
+            [class.bg-emerald-500/10]="pickerVariant()?.id === v.id"
+            [class.border-zinc-700]="pickerVariant()?.id !== v.id">
+            <img
+              [src]="v.image || pickerProduct()?.image"
+              [alt]="v.flavor"
+              class="w-12 h-12 rounded-lg object-contain bg-zinc-800 shrink-0">
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between gap-2">
+                <span class="font-medium">{{ v.flavor }}</span>
+                <span class="text-emerald-400 shrink-0">KSH {{ v.price }}</span>
+              </div>
+              <p class="text-xs text-zinc-500 mt-1">{{ v.stock }} in stock</p>
+            </div>
+          </button>
+        }
+      </div>
+
+      <div class="p-5 pt-4 shrink-0 border-t border-zinc-800 flex gap-3">
+        <button
+          type="button"
+          (click)="closeFlavorPicker()"
+          class="flex-1 border border-zinc-700 hover:border-zinc-500 py-2.5 rounded-xl text-sm transition">
+          Cancel
+        </button>
+        <button
+          type="button"
+          (click)="confirmFlavorAdd()"
+          [disabled]="!pickerVariant()"
+          class="flex-1 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-black font-bold py-2.5 rounded-xl text-sm transition">
+          Add to Cart
+        </button>
+      </div>
+    </div>
+  </div>
+}
   `,
   styles: [`
     .similar-scroll {
@@ -302,6 +323,35 @@ import { ApiService } from '../../services/api.service';
       background: #18181b;
       border-radius: 999px;
     }
+    .img-swap {
+    animation: flavorPop 0.4s ease-out;
+  }
+
+  @keyframes flavorPop {
+    0%   { opacity: 0.35; transform: scale(0.92); }
+    60%  { opacity: 1;    transform: scale(1.03); }
+    100% { opacity: 1;    transform: scale(1); }
+  }
+
+  .similar-scroll {
+    cursor: grab;
+    scrollbar-width: thin;
+    scrollbar-color: #52525b transparent;
+  }
+  .similar-scroll.is-dragging {
+    cursor: grabbing;
+    scroll-behavior: auto;
+  }
+  .similar-scroll::-webkit-scrollbar { height: 10px; }
+  .similar-scroll::-webkit-scrollbar-thumb {
+    background: #52525b;
+    border-radius: 999px;
+  }
+  .similar-scroll::-webkit-scrollbar-track {
+    background: #18181b;
+    border-radius: 999px;
+  }
+
   `]
 })
 export class ProductDetailComponent implements OnInit, OnDestroy {
@@ -622,9 +672,20 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       variantId: variant.id,
       maxStock: variant.stock
     });
-
-    this.closeFlavorPicker();
   }
+
+  imagePulse = signal(false);
+
+selectFlavor(v: any) {
+  this.mainVariant.set(v);
+  // Flash so phones notice the image change
+  this.imagePulse.set(false);
+  requestAnimationFrame(() => {
+    this.imagePulse.set(true);
+    setTimeout(() => this.imagePulse.set(false), 400);
+  });
+}
+
 
   goBack() {
     this.router.navigate(['/']);
