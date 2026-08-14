@@ -39,13 +39,12 @@ import { ApiService } from '../../services/api.service';
         } @else {
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
 
-            <div class="aspect-square rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800">
-              <img
-                [src]="product().image"
-                [alt]="product().name"
-                class="w-full h-full object-contain">
-            </div>
-
+<div class="aspect-square rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 flex items-center justify-center">
+  <img
+    [src]="displayImage()"
+    [alt]="product().name"
+    class="w-full h-full object-contain transition-opacity duration-300">
+</div>
             <div class="flex flex-col">
               <p class="text-xs uppercase tracking-wider text-emerald-400 mb-2">
                 {{ categoryLabel(product().category) }}
@@ -238,18 +237,24 @@ import { ApiService } from '../../services/api.service';
           <div class="space-y-2 mb-5 max-h-60 overflow-y-auto">
             @for (v of pickerVariants(); track v.id) {
               <button
-                type="button"
-                (click)="pickerVariant.set(v)"
-                class="w-full text-left px-4 py-3 rounded-xl border transition"
-                [class.border-emerald-500]="pickerVariant()?.id === v.id"
-                [class.bg-emerald-500/10]="pickerVariant()?.id === v.id"
-                [class.border-zinc-700]="pickerVariant()?.id !== v.id">
-                <div class="flex justify-between items-center">
-                  <span class="font-medium">{{ v.flavor }}</span>
-                  <span class="text-emerald-400 font-semibold">KSH {{ v.price }}</span>
-                </div>
-                <p class="text-xs text-zinc-500 mt-1">{{ v.stock }} in stock</p>
-              </button>
+  type="button"
+  (click)="mainVariant.set(v)"
+  class="w-full text-left px-4 py-3 rounded-xl border transition flex gap-3 items-center"
+  [class.border-emerald-500]="mainVariant()?.id === v.id"
+  [class.bg-emerald-500/10]="mainVariant()?.id === v.id"
+  [class.border-zinc-700]="mainVariant()?.id !== v.id">
+  @if (v.image) {
+    <img [src]="v.image" [alt]="v.flavor"
+         class="w-12 h-12 rounded-lg object-contain bg-zinc-800 shrink-0">
+  }
+  <div class="flex-1 min-w-0">
+    <div class="flex justify-between gap-2">
+      <span class="font-medium">{{ v.flavor }}</span>
+      <span class="text-emerald-400 shrink-0">KSH {{ v.price }}</span>
+    </div>
+    <p class="text-xs text-zinc-500 mt-1">{{ v.stock }} in stock</p>
+  </div>
+</button>
             }
           </div>
 
@@ -505,6 +510,14 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     if (v?.price != null) return v.price;
     return p?.base_price || p?.price || 0;
   }
+
+  displayImage(): string {
+  const variant = this.mainVariant();
+  const product = this.product();
+  // Prefer flavor image when selected
+  if (variant?.image) return variant.image;
+  return product?.image || '';
+}
 
   categoryLabel(category: string): string {
     const labels: Record<string, string> = {

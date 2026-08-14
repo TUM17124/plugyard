@@ -115,30 +115,43 @@ import { ApiService } from '../../services/api.service';
       }
     </section>
 
-    @if (showFlavorModal()) {
-      <div class="fixed inset-0 bg-black/70 z-[80] flex items-center justify-center p-4"
-           (click)="closeFlavorPicker()">
-        <div class="bg-zinc-950 border border-zinc-700 rounded-2xl w-full max-w-sm p-5"
-             (click)="$event.stopPropagation()">
+   @if (showFlavorModal()) {
+  <div class="fixed inset-0 bg-black/70 z-[80] flex items-center justify-center p-4"
+       (click)="closeFlavorPicker()">
+    <div class="bg-zinc-950 border border-zinc-700 rounded-2xl w-full max-w-sm p-5"
+         (click)="$event.stopPropagation()">
 
-          <h3 class="text-lg font-bold mb-1">{{ selectedProduct()?.name }}</h3>
-          <p class="text-zinc-400 text-sm mb-4">Choose your flavor</p>
+      <h3 class="text-lg font-bold mb-1">{{ selectedProduct()?.name }}</h3>
+      <p class="text-zinc-400 text-sm mb-4">Choose your flavor</p>
 
-          <div class="space-y-2 mb-5 max-h-60 overflow-y-auto">
-            @for (v of availableVariants(); track v.id) {
-              <button
-                type="button"
-                (click)="selectedVariant.set(v)"
-                class="w-full text-left px-4 py-3 rounded-xl border transition"
-                [class.border-emerald-500]="selectedVariant()?.id === v.id"
-                [class.bg-emerald-500/10]="selectedVariant()?.id === v.id"
-                [class.border-zinc-700]="selectedVariant()?.id !== v.id">
-                <div class="flex justify-between items-center">
-                  <span class="font-medium">{{ v.flavor }}</span>
-                  <span class="text-emerald-400 font-semibold">KSH {{ v.price }}</span>
-                </div>
-                <p class="text-xs text-zinc-500 mt-1">{{ v.stock }} in stock</p>
-              </button>
+      <!-- Preview of selected flavor -->
+      <div class="aspect-square rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 mb-4 flex items-center justify-center">
+        <img
+          [src]="selectedVariant()?.image || selectedProduct()?.image"
+          [alt]="selectedVariant()?.flavor || selectedProduct()?.name"
+          class="w-full h-full object-contain">
+      </div>
+
+      <div class="space-y-2 mb-5 max-h-60 overflow-y-auto">
+        @for (v of availableVariants(); track v.id) {
+          <button
+            type="button"
+            (click)="selectedVariant.set(v)"
+            class="w-full text-left px-4 py-3 rounded-xl border transition flex gap-3 items-center"
+            [class.border-emerald-500]="selectedVariant()?.id === v.id"
+            [class.bg-emerald-500/10]="selectedVariant()?.id === v.id"
+            [class.border-zinc-700]="selectedVariant()?.id !== v.id">
+            @if (v.image) {
+              <img [src]="v.image" class="w-10 h-10 rounded-lg object-contain bg-zinc-800 shrink-0" [alt]="v.flavor">
+            }
+            <div class="flex-1">
+              <div class="flex justify-between">
+                <span class="font-medium">{{ v.flavor }}</span>
+                <span class="text-emerald-400 font-semibold">KSH {{ v.price }}</span>
+              </div>
+              <p class="text-xs text-zinc-500 mt-1">{{ v.stock }} in stock</p>
+            </div>
+          </button>
             }
           </div>
 
