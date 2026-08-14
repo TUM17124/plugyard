@@ -31,7 +31,10 @@ import { CartService } from '../../services/cart.service';
           } @else {
             @for (item of cart.items(); track trackItem(item)) {
               <div class="flex gap-4 bg-zinc-900 rounded-xl p-3">
-                <img [src]="item.product.image" class="w-20 h-20 object-contain rounded-lg bg-zinc-800">
+                <img
+  [src]="item.image || item.product.image"
+  [alt]="item.product.name"
+  class="w-20 h-20 object-contain rounded-lg bg-zinc-800">
                 <div class="flex-1 min-w-0">
                   <h4 class="font-medium line-clamp-1">{{ item.product.name }}</h4>
                   

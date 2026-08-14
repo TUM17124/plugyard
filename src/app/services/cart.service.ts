@@ -7,6 +7,7 @@ export interface CartItem {
   flavor?: string;
   variantId?: number;
   maxStock?: number;
+  image?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -26,47 +27,51 @@ export class CartService {
   );
 
   add(product: any, qty = 1) {
-    const price = product.price ?? product.base_price ?? 0;
-    const flavor = product.flavor || '';
-    const maxStock = product.maxStock ?? product.stock ?? 9999;
+  const price = product.price ?? product.base_price ?? 0;
+  const flavor = product.flavor || '';
+  const maxStock = product.maxStock ?? product.stock ?? 9999;
+  // Prefer flavor/option image, else product image
+  const image = product.image || product.imageUrl || '';
 
-    const current = [...this.cart()];
-    const existing = current.find(
-      i => i.product.id === product.id && (i.flavor || '') === flavor
-    );
+  const current = [...this.cart()];
+  const existing = current.find(
+    i => i.product.id === product.id && (i.flavor || '') === flavor
+  );
 
-    if (existing) {
-      const newQty = existing.qty + qty;
-      if (newQty > maxStock) {
-        alert(`Only ${maxStock} left in stock`);
-        existing.qty = maxStock;
-      } else {
-        existing.qty = newQty;
-      }
+  if (existing) {
+    let newQty = existing.qty + qty;
+    if (newQty > maxStock) {
+      alert(`Only ${maxStock} left in stock`);
+      existing.qty = maxStock;
     } else {
-      let finalQty = qty;
-      if (qty > maxStock) {
-        alert(`Only ${maxStock} left in stock`);
-        finalQty = maxStock;
-      }
-      current.push({
-        product: {
-          id: product.id,
-          name: product.name,
-          image: product.image,
-          category: product.category
-        },
-        qty: finalQty,
-        price,
-        flavor,
-        variantId: product.variantId,
-        maxStock
-      });
+      existing.qty = newQty;
     }
-
-    this.cart.set(current);
-    this.saveCart();
+    // keep / refresh image
+    if (image) existing.image = image;
+  } else {
+    if (qty > maxStock) {
+      alert(`Only ${maxStock} left in stock`);
+      qty = maxStock;
+    }
+    current.push({
+      product: {
+        id: product.id,
+        name: product.name,
+        image: product.image, // fallback
+        category: product.category
+      },
+      qty,
+      price,
+      flavor,
+      variantId: product.variantId,
+      maxStock,
+      image
+    });
   }
+
+  this.cart.set(current);
+  this.saveCart();
+}
 
   updateQty(productId: number, flavor: string, qty: number) {
     if (qty <= 0) {

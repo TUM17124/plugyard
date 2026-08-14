@@ -374,10 +374,12 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   }
 
   availableVariants = () => {
-    const p = this.selectedProduct();
-    if (!p?.variants) return [];
-    return p.variants.filter((v: any) => v.is_available && v.stock > 0);
-  };
+  const p = this.selectedProduct();
+  if (!p?.variants) return [];
+  return p.variants.filter(
+    (v: any) => v.is_available !== false && Number(v.stock) > 0
+  );
+};
 
   categoryLabel(category: string): string {
     const labels: Record<string, string> = {
@@ -393,14 +395,29 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   }
 
   hasFlavors(product: any): boolean {
-    const variants = product.variants || [];
-    return variants.some((v: any) => v.is_available && v.stock > 0);
+  const variants = product?.variants || [];
+  // True only if at least one option can be bought
+  return variants.some(
+    (v: any) => v.is_available !== false && Number(v.stock) > 0
+  );
+}
+
+isInStock(product: any): boolean {
+  const variants = product?.variants || [];
+
+  // Product with options → in stock if ANY option has stock
+  if (variants.length > 0) {
+    return variants.some(
+      (v: any) => v.is_available !== false && Number(v.stock) > 0
+    );
   }
 
-  isInStock(product: any): boolean {
-    if (this.hasFlavors(product)) return true;
-    return product.is_available !== false && (product.stock > 0 || product.in_stock === true);
-  }
+  // No options → use product stock
+  return (
+    product?.is_available !== false &&
+    (Number(product?.stock) > 0 || product?.in_stock === true)
+  );
+}
 
   openFlavorPicker(product: any) {
     this.selectedProduct.set(product);
@@ -430,12 +447,13 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   }
 
   this.cart.add({
-    ...product,
-    price: variant.price,
-    flavor: variant.flavor,
-    variantId: variant.id,
-    maxStock: variant.stock
-  });
+  ...product,
+  price: variant.price,
+  flavor: variant.flavor,
+  variantId: variant.id,
+  maxStock: variant.stock,
+  image: variant.image || product.image   // ← option image
+});
 
   // Do NOT call closeFlavorPicker() — stay open for more adds
 }
@@ -443,7 +461,7 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   addToCart(product: any) {
     if (!this.isInStock(product)) return;
 
-    const stock = product.stock ?? 0;
+    const stock = Number(product.stock ?? 0);
     if (stock <= 0 && !this.hasFlavors(product)) {
       alert('This product is sold out');
       return;
@@ -451,9 +469,11 @@ export class ProductGridComponent implements OnInit, OnDestroy {
 
     this.cart.add({
       ...product,
-      price: product.base_price || product.price,
-      flavor: '',
-      maxStock: stock
+      price: product.price ?? 0,
+      flavor: product.flavor ?? '',
+      variantId: product.variantId ?? null,
+      maxStock: product.maxStock ?? product.stock ?? 0,
+      image: product.image
     });
   }
 }

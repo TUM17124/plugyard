@@ -545,14 +545,29 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   }
 
   hasFlavors(product: any): boolean {
-    const variants = product?.variants || [];
-    return variants.some((v: any) => v.is_available && v.stock > 0);
+  const variants = product?.variants || [];
+  // True only if at least one option can be bought
+  return variants.some(
+    (v: any) => v.is_available !== false && Number(v.stock) > 0
+  );
+}
+
+isInStock(product: any): boolean {
+  const variants = product?.variants || [];
+
+  // Product with options → in stock if ANY option has stock
+  if (variants.length > 0) {
+    return variants.some(
+      (v: any) => v.is_available !== false && Number(v.stock) > 0
+    );
   }
 
-  isInStock(product: any): boolean {
-    if (this.hasFlavors(product)) return true;
-    return product?.is_available !== false && (product?.stock > 0 || product?.in_stock === true);
-  }
+  // No options → use product stock
+  return (
+    product?.is_available !== false &&
+    (Number(product?.stock) > 0 || product?.in_stock === true)
+  );
+}
 
   displayPrice(): number | string {
     const p = this.product();
@@ -600,7 +615,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
         price: variant.price,
         flavor: variant.flavor,
         variantId: variant.id,
-        maxStock: variant.stock
+        maxStock: variant.stock,
+        image: variant.image || product.image
       });
     } else {
       const stock = product.stock ?? 0;
@@ -608,12 +624,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
         alert('This product is sold out');
         return;
       }
-      this.cart.add({
-        ...product,
-        price: product.base_price || product.price,
-        flavor: '',
-        maxStock: stock
-      });
+      this.cart.add(product);
     }
   }
 
@@ -626,12 +637,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.cart.add({
-      ...product,
-      price: product.base_price || product.price,
-      flavor: '',
-      maxStock: stock
-    });
+    this.cart.add(product);
   }
 
   pickerVariants() {
@@ -666,12 +672,13 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     }
 
     this.cart.add({
-      ...product,
-      price: variant.price,
-      flavor: variant.flavor,
-      variantId: variant.id,
-      maxStock: variant.stock
-    });
+  ...product,
+  price: variant.price,
+  flavor: variant.flavor,
+  variantId: variant.id,
+  maxStock: variant.stock,
+  image: variant.image || product.image   // ← option image
+});
   }
 
   imagePulse = signal(false);

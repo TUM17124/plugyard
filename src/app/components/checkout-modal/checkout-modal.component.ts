@@ -26,16 +26,22 @@ const SAVED_CHECKOUT_KEY = 'plugyard-checkout-info';
             <div class="p-5 border-b border-zinc-800">
               <h3 class="font-semibold mb-3 text-zinc-300">Order Summary</h3>
               @for (item of cart.items(); track item.product.id + (item.flavor || '')) {
-                <div class="flex justify-between text-sm mb-2">
-                  <span>
-                    {{ item.qty }}× {{ item.product.name }}
-                    @if (item.flavor) {
-                      <span class="text-zinc-400">({{ item.flavor }})</span>
-                    }
-                  </span>
-                  <span>KSH {{ item.price * item.qty }}</span>
-                </div>
-              }
+  <div class="flex justify-between items-center text-sm mb-2 gap-2">
+    <div class="flex items-center gap-2 min-w-0">
+      <img
+        [src]="item.image || item.product.image"
+        class="w-10 h-10 object-contain rounded-lg bg-zinc-800 shrink-0"
+        alt="">
+      <span class="truncate">
+        {{ item.qty }}× {{ item.product.name }}
+        @if (item.flavor) {
+          <span class="text-zinc-400">({{ item.flavor }})</span>
+        }
+      </span>
+    </div>
+    <span class="shrink-0">KSH {{ item.price * item.qty }}</span>
+  </div>
+}
 
               <div class="flex justify-between font-bold text-lg mt-4 pt-3 border-t border-zinc-800">
                 <span>Total</span>
@@ -142,7 +148,10 @@ const SAVED_CHECKOUT_KEY = 'plugyard-checkout-info';
 
                 @for (item of orderedItems; track item.product.id + (item.flavor || '')) {
                   <div class="flex gap-3 mb-3 last:mb-0 items-center">
-                    <img [src]="item.product.image" class="w-14 h-14 object-contain rounded-lg bg-zinc-800" alt="">
+                    <img
+  [src]="item.image || item.product.image"
+  class="w-14 h-14 object-contain rounded-lg bg-zinc-800"
+  alt="">
                     <div class="flex-1">
                       <p class="font-medium text-sm">{{ item.product.name }}</p>
                       @if (item.flavor) {
