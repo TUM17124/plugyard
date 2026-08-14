@@ -420,25 +420,25 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   }
 
   confirmFlavorAdd() {
-    const product = this.selectedProduct();
-    const variant = this.selectedVariant();
-    if (!product || !variant) return;
+  const product = this.selectedProduct();
+  const variant = this.selectedVariant();
+  if (!product || !variant) return;
 
-    if (variant.stock <= 0) {
-      alert('This flavor is sold out');
-      return;
-    }
-
-    this.cart.add({
-      ...product,
-      price: variant.price,
-      flavor: variant.flavor,
-      variantId: variant.id,
-      maxStock: variant.stock
-    });
-
-    this.closeFlavorPicker();
+  if (variant.stock <= 0) {
+    alert('This flavor is sold out');
+    return;
   }
+
+  this.cart.add({
+    ...product,
+    price: variant.price,
+    flavor: variant.flavor,
+    variantId: variant.id,
+    maxStock: variant.stock
+  });
+
+  // Do NOT call closeFlavorPicker() — stay open for more adds
+}
 
   addToCart(product: any) {
     if (!this.isInStock(product)) return;
