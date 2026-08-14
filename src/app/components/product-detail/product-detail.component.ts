@@ -197,7 +197,7 @@ import { ApiService } from '../../services/api.service';
                               type="button"
                               (click)="openFlavorPicker(p)"
                               class="bg-zinc-100 hover:bg-white text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
-                              Choose
+                              Choose option
                             </button>
                           } @else {
                             <button
@@ -232,7 +232,7 @@ import { ApiService } from '../../services/api.service';
           class="bg-zinc-950 border border-zinc-700 rounded-2xl w-full max-w-sm p-5"
           (click)="$event.stopPropagation()">
           <h3 class="text-lg font-bold mb-1">{{ pickerProduct()?.name }}</h3>
-          <p class="text-zinc-400 text-sm mb-4">Choose your flavor</p>
+          <p class="text-zinc-400 text-sm mb-4">Choose your option</p>
 
           <div class="space-y-2 mb-5 max-h-60 overflow-y-auto">
             @for (v of pickerVariants(); track v.id) {

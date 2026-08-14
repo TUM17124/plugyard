@@ -87,7 +87,7 @@ import { ApiService } from '../../services/api.service';
                       type="button"
                       (click)="openFlavorPicker(product); $event.stopPropagation()"
                       class="bg-zinc-100 hover:bg-white text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
-                      Choose
+                      Choose option
                     </button>
                   } @else {
                     <button
@@ -122,7 +122,7 @@ import { ApiService } from '../../services/api.service';
          (click)="$event.stopPropagation()">
 
       <h3 class="text-lg font-bold mb-1">{{ selectedProduct()?.name }}</h3>
-      <p class="text-zinc-400 text-sm mb-4">Choose your flavor</p>
+      <p class="text-zinc-400 text-sm mb-4">Choose your option</p>
 
       <!-- Preview of selected flavor -->
       <div class="aspect-square rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 mb-4 flex items-center justify-center">
