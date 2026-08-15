@@ -78,7 +78,7 @@ import { ApiService } from '../../services/api.service';
 
               @if (hasFlavors(product())) {
   <div class="mb-6">
-    <h2 class="font-semibold text-lg mb-3">Choose flavor</h2>
+    <h2 class="font-semibold text-lg mb-3">Choose option</h2>
     <div class="space-y-2">
       @for (v of availableVariants(); track v.id) {
         <button
