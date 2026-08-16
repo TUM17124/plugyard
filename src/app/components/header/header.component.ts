@@ -107,7 +107,7 @@ import { ApiService } from '../../services/api.service';
           </nav>
         </div>
 
-        <p class="text-[20px] text-zinc-600 mt-1.5 sm:hidden text-center">
+        <p class="text-[10px] text-zinc-600 mt-1.5 sm:hidden text-center">
           ← Swipe to see more categories →
         </p>
       </div>
