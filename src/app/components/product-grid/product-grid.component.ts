@@ -387,101 +387,94 @@ export class ProductGridComponent implements OnInit, OnDestroy {
    * Home: categories from API → recommended → products (page 1+2) → sections
    */
   loadHome() {
-    this.loading.set(true);
-    this.viewMode.set('recommended');
-    this.products.set([]);
-    this.recommended.set([]);
-    this.homeSections.set([]);
-    this.hasMore.set(false);
+  this.loading.set(true);
+  this.viewMode.set('recommended');
+  this.products.set([]);
+  this.recommended.set([]);
+  this.homeSections.set([]);
+  this.hasMore.set(false);
 
-    this.api.getCategories().subscribe({
-      next: (catData) => {
-        const cats = this.parseList(catData).filter(
-          (c: any) => c.show_on_home !== false
-        );
-        this.categories.set(cats);
+  this.api.getCategories().subscribe({
+    next: (catData) => {
+      const cats = this.parseList(catData).filter(
+        (c: any) => c.show_on_home !== false
+      );
+      this.categories.set(cats);
 
-        this.api.getProducts({ recommended: true, page: 1 }).subscribe({
-          next: (rec) => {
-            const recommendedList = rec.results || [];
-            this.recommended.set(recommendedList);
+      // Recommended block
+      this.api.getProducts({ recommended: true, page: 1 }).subscribe({
+        next: (rec) => this.recommended.set(rec.results || []),
+        error: () => this.recommended.set([])
+      });
 
-            this.api.getProducts({ page: 1 }).subscribe({
-              next: (page1) => {
-                let all = [...(page1.results || [])];
-
-                const finish = (products: any[]) => {
-                  const sections = cats.map((c: any) => ({
-                    key: c.key,
-                    title: c.title || c.key,
-                    description: c.description || '',
-                    layout: (c.layout === 'scroll' ? 'scroll' : 'list') as 'list' | 'scroll',
-                    products: products.filter(
-                      (p: any) => String(p.category).toLowerCase() === String(c.key).toLowerCase()
-                    )
-                  }));
-
-                  this.homeSections.set(sections);
-                  this.loading.set(false);
-                  this.cdr.detectChanges();
-                };
-
-                if (page1.next) {
-                  this.api.getProducts({ page: 2 }).subscribe({
-                    next: (page2) => finish([...all, ...(page2.results || [])]),
-                    error: () => finish(all)
-                  });
-                } else {
-                  finish(all);
-                }
-              },
-              error: () => {
-                this.loading.set(false);
-                this.cdr.detectChanges();
-              }
-            });
-          },
-          error: () => {
-            this.api.getProducts({ page: 1 }).subscribe({
-              next: (page1) => {
-                const all = page1.results || [];
-                const sections = cats.map((c: any) => ({
-                  key: c.key,
-                  title: c.title || c.key,
-                  description: c.description || '',
-                  layout: (c.layout === 'scroll' ? 'scroll' : 'list') as 'list' | 'scroll',
-                  products: all.filter(
-                    (p: any) => String(p.category).toLowerCase() === String(c.key).toLowerCase()
-                  )
-                }));
-                this.homeSections.set(sections);
-                this.loading.set(false);
-                this.cdr.detectChanges();
-              },
-              error: () => {
-                this.loading.set(false);
-                this.cdr.detectChanges();
-              }
-            });
-          }
-        });
-      },
-      error: () => {
-        // No categories — still show recommended
-        this.api.getProducts({ recommended: true, page: 1 }).subscribe({
-          next: (rec) => {
-            this.recommended.set(rec.results || []);
-            this.loading.set(false);
-            this.cdr.detectChanges();
-          },
-          error: () => {
-            this.loading.set(false);
-            this.cdr.detectChanges();
-          }
-        });
+      if (cats.length === 0) {
+        this.loading.set(false);
+        this.cdr.detectChanges();
+        return;
       }
-    });
-  }
+
+      // Load products PER category from API (reliable)
+      let pending = cats.length;
+      const sections: {
+        key: string;
+        title: string;
+        description: string;
+        layout: 'list' | 'scroll';
+        products: any[];
+      }[] = [];
+
+      cats.forEach((c: any, index: number) => {
+        this.api.getProducts({ category: c.key, page: 1 }).subscribe({
+          next: (res) => {
+            sections[index] = {
+              key: c.key,
+              title: c.title || c.key,
+              description: c.description || '',
+              layout: c.layout === 'scroll' ? 'scroll' : 'list',
+              products: res.results || []
+            };
+            pending--;
+            if (pending === 0) {
+              // Keep admin sort_order
+              this.homeSections.set(sections.filter(Boolean));
+              this.loading.set(false);
+              this.cdr.detectChanges();
+            }
+          },
+          error: () => {
+            sections[index] = {
+              key: c.key,
+              title: c.title || c.key,
+              description: c.description || '',
+              layout: c.layout === 'scroll' ? 'scroll' : 'list',
+              products: []
+            };
+            pending--;
+            if (pending === 0) {
+              this.homeSections.set(sections.filter(Boolean));
+              this.loading.set(false);
+              this.cdr.detectChanges();
+            }
+          }
+        });
+      });
+    },
+    error: (err) => {
+      console.error('getCategories failed', err);
+      this.api.getProducts({ recommended: true, page: 1 }).subscribe({
+        next: (rec) => {
+          this.recommended.set(rec.results || []);
+          this.loading.set(false);
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.loading.set(false);
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  });
+}
 
   activeLayout(): 'list' | 'scroll' {
     const mode = this.viewMode();
