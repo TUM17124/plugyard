@@ -189,34 +189,34 @@ import { ApiService } from '../../services/api.service';
             (click)="onCardClick($event)">
             Read more
           </a>
-          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center justify-between gap-2">
             <div>
-              <span class="text-sm sm:text-lg font-bold">
+              <span  class="text-emerald-400 font-bold text-sm">
                 KSH {{ formatPrice(product.base_price || product.price) }}
               </span>
               @if (isInStock(product)) {
-                <p class="text-[10px] sm:text-xs text-emerald-400 mt-0.5">In Stock</p>
+                <p class="text-xs text-emerald-400 mt-0.5">In Stock</p>
               } @else {
-                <p class="text-[10px] sm:text-xs text-red-400 mt-0.5">Sold Out</p>
+                <p class="text-xs text-red-400 mt-0.5">Sold Out</p>
               }
             </div>
             @if (!isInStock(product)) {
               <button type="button" disabled
-                class="bg-zinc-700 text-zinc-400 font-semibold px-2.5 py-1.5 rounded-full text-[10px] sm:text-xs cursor-not-allowed">
+                 class="bg-zinc-700 text-zinc-400 font-semibold px-3 py-1.5 rounded-full text-xs cursor-not-allowed">
                 Sold Out
               </button>
             } @else if (hasFlavors(product)) {
               <button
                 type="button"
                 (click)="openFlavorPicker(product); $event.stopPropagation()"
-                class="bg-zinc-100 hover:bg-white text-black font-semibold px-2.5 py-1.5 rounded-full text-[10px] sm:text-xs transition active:scale-95">
+                class="bg-zinc-100 hover:bg-white text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
                 Choose option
               </button>
             } @else {
               <button
                 type="button"
                 (click)="addToCart(product); $event.stopPropagation()"
-                class="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-2.5 py-1.5 rounded-full text-[10px] sm:text-xs transition active:scale-95">
+                class="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
                 Add to Cart
               </button>
             }
