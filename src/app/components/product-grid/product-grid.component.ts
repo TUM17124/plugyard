@@ -111,7 +111,7 @@ import { ApiService } from '../../services/api.service';
                   }
                 </div>
 
-                <p class="text-[10px] text-zinc-600 mt-1.5 text-center sm:text-left">
+                <p class="text-[20px] text-zinc-600 mt-1.5 text-center sm:text-left">
                   <span class="sm:hidden">← Swipe for more →</span>
                   <span class="hidden sm:inline">Drag or use scroll wheel to browse →</span>
                 </p>
