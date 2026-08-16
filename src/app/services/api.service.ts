@@ -45,4 +45,12 @@ export class ApiService {
       `${this.baseUrl}/my-orders/?phone=${encodeURIComponent(phone)}`
     );
   }
+
+  
+logSearch(query: string, resultsCount = 0) {
+  return this.http.post(`${this.baseUrl}/log-search/`, {
+    query,
+    results_count: resultsCount
+  });
+}
 }
