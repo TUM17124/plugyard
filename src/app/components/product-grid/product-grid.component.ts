@@ -9,7 +9,8 @@ import {
   ChangeDetectorRef,
   ElementRef,
   viewChild,
-  afterNextRender
+  afterNextRender,
+  HostListener
 } from '@angular/core';
 import { CommonModule, NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -23,7 +24,7 @@ import { ApiService } from '../../services/api.service';
   template: `
     <section id="product-list" class="max-w-7xl mx-auto px-4 sm:px-6 py-12">
 
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
         <div>
           <h2 class="text-2xl sm:text-3xl font-bold">
             @if (viewMode().startsWith('search:')) {
@@ -42,32 +43,35 @@ import { ApiService } from '../../services/api.service';
             }
           </p>
         </div>
+      </div>
 
-        <div class="flex sm:hidden items-center gap-2 self-start">
-          <span class="text-xs text-zinc-500">View</span>
-          <button
-            type="button"
-            (click)="columnsMode.set(1)"
-            class="px-3 py-1.5 rounded-full text-xs font-semibold border transition"
-            [class.bg-emerald-500]="columnsMode() === 1"
-            [class.text-black]="columnsMode() === 1"
-            [class.border-emerald-500]="columnsMode() === 1"
-            [class.border-zinc-700]="columnsMode() !== 1"
-            [class.text-zinc-300]="columnsMode() !== 1">
-            1 per row
-          </button>
-          <button
-            type="button"
-            (click)="columnsMode.set(2)"
-            class="px-3 py-1.5 rounded-full text-xs font-semibold border transition"
-            [class.bg-emerald-500]="columnsMode() === 2"
-            [class.text-black]="columnsMode() === 2"
-            [class.border-emerald-500]="columnsMode() === 2"
-            [class.border-zinc-700]="columnsMode() !== 2"
-            [class.text-zinc-300]="columnsMode() !== 2">
-            2 per row
-          </button>
-        </div>
+      <!-- Phone View bar: in page flow + sticky under header -->
+      <div
+        class="flex md:hidden items-center gap-2 sticky z-40 -mx-4 px-4 py-2.5 mb-6 backdrop-blur-md"
+        style="top: 12rem;">
+        <span class="text-xs text-zinc-500 shrink-0">View</span>
+        <button
+          type="button"
+          (click)="columnsMode.set(1)"
+          class="px-3 py-1.5 rounded-full text-xs font-semibold border transition"
+          [class.bg-emerald-500]="columnsMode() === 1"
+          [class.text-black]="columnsMode() === 1"
+          [class.border-emerald-500]="columnsMode() === 1"
+          [class.border-zinc-700]="columnsMode() !== 1"
+          [class.text-zinc-300]="columnsMode() !== 1">
+          1 per row
+        </button>
+        <button
+          type="button"
+          (click)="columnsMode.set(2)"
+          class="px-3 py-1.5 rounded-full text-xs font-semibold border transition"
+          [class.bg-emerald-500]="columnsMode() === 2"
+          [class.text-black]="columnsMode() === 2"
+          [class.border-emerald-500]="columnsMode() === 2"
+          [class.border-zinc-700]="columnsMode() !== 2"
+          [class.text-zinc-300]="columnsMode() !== 2">
+          2 per row
+        </button>
       </div>
 
       @if (loading() && !hasAnyContent()) {
@@ -132,6 +136,18 @@ import { ApiService } from '../../services/api.service';
         }
       }
     </section>
+
+    @if (showScrollTop()) {
+      <button
+        type="button"
+        (click)="scrollToTop()"
+        class="fixed bottom-24 right-4 z-50 w-12 h-12 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black shadow-lg flex items-center justify-center transition active:scale-95"
+        aria-label="Scroll to top">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+        </svg>
+      </button>
+    }
 
     <ng-template #listLayout let-list>
       <div
@@ -319,6 +335,7 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   loadingMore = signal(false);
   viewMode = signal<string>('recommended');
   columnsMode = signal<1 | 2>(2);
+  showScrollTop = signal(false);
 
   currentPage = signal(1);
   totalCount = signal(0);
@@ -328,7 +345,6 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   selectedProduct = signal<any>(null);
   selectedVariant = signal<any>(null);
 
-  /** Drag-to-scroll (desktop) for home recommended rows */
   dragId: string | null = null;
   private dragEl: HTMLElement | null = null;
   private dragMoved = false;
@@ -385,11 +401,17 @@ export class ProductGridComponent implements OnInit, OnDestroy {
     this.observer = null;
   }
 
-  // ---------- Desktop drag + wheel on home scroll rows ----------
+  @HostListener('window:scroll')
+  onWindowScroll() {
+    this.showScrollTop.set(window.scrollY > 400);
+  }
+
+  scrollToTop() {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  }
 
   startDrag(e: MouseEvent, id: string, el: HTMLElement) {
     if (e.button !== 0) return;
-    // Don't start drag from buttons
     const tag = (e.target as HTMLElement)?.closest('button, a');
     if (tag && tag.tagName === 'BUTTON') return;
 
@@ -438,8 +460,6 @@ export class ProductGridComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ---------- Rest ----------
-
   private parseList(data: any): any[] {
     if (Array.isArray(data)) return data;
     if (data?.results && Array.isArray(data.results)) return data.results;
@@ -478,6 +498,7 @@ export class ProductGridComponent implements OnInit, OnDestroy {
     this.recommended.set([]);
     this.homeSections.set([]);
     this.hasMore.set(false);
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
 
     this.api.getCategories().subscribe({
       next: (catData) => {
@@ -598,10 +619,12 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   }
 
   loadCategory(category: string) {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     this.resetAndLoad({ category }, category);
   }
 
   loadSearch(q: string) {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     this.resetAndLoad({ search: q }, 'search:' + q);
   }
 
@@ -644,6 +667,7 @@ export class ProductGridComponent implements OnInit, OnDestroy {
         this.loading.set(false);
         this.cdr.detectChanges();
         this.observeSentinel();
+        window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
         document.getElementById('product-list')?.scrollIntoView({
           behavior: 'smooth',
           block: 'start'

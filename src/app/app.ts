@@ -109,6 +109,7 @@ export class App {
 
   onCategoryChange(category: string) {
     this.filters.setCategory(category);
+  window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     this.router.navigate(['/']).then(() => {
       setTimeout(() => {
         document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
@@ -118,6 +119,7 @@ export class App {
 
   onSearch(q: string) {
     this.filters.setSearch(q);
+     window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     this.router.navigate(['/']).then(() => {
       setTimeout(() => {
         document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
