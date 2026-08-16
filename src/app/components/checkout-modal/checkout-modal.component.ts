@@ -39,13 +39,13 @@ const SAVED_CHECKOUT_KEY = 'plugyard-checkout-info';
         }
       </span>
     </div>
-    <span class="shrink-0">KSH {{ item.price * item.qty }}</span>
+    <span class="shrink-0">KSH {{ formatPrice(item.price * item.qty) }}</span>
   </div>
 }
 
               <div class="flex justify-between font-bold text-lg mt-4 pt-3 border-t border-zinc-800">
                 <span>Total</span>
-                <span class="text-emerald-400">KSH {{ cart.totalPrice() }}</span>
+                <span class="text-emerald-400">KSH {{ formatPrice(cart.totalPrice()) }}</span>
               </div>
             </div>
 
@@ -160,14 +160,14 @@ const SAVED_CHECKOUT_KEY = 'plugyard-checkout-info';
                       <p class="text-zinc-400 text-xs">Qty: {{ item.qty }}</p>
                     </div>
                     <p class="text-emerald-400 font-medium text-sm">
-                      KSH {{ item.price * item.qty }}
+                      KSH {{ formatPrice(item.price * item.qty) }}
                     </p>
                   </div>
                 }
 
                 <div class="flex justify-between font-bold mt-4 pt-3 border-t border-zinc-700">
                   <span>Total</span>
-                  <span class="text-emerald-400">KSH {{ orderTotal }}</span>
+                  <span class="text-emerald-400">KSH {{ formatPrice(orderTotal) }}</span>
                 </div>
               </div>
 
@@ -306,4 +306,10 @@ export class CheckoutModalComponent {
     this.orderTotal = 0;
     this.close.emit();
   }
+
+  formatPrice(value: number | string | null | undefined): string {
+  const n = Number(value ?? 0);
+  if (Number.isNaN(n)) return '0';
+  return n.toLocaleString('en-KE'); // 1200 → 1,200
+}
 }

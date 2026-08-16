@@ -65,11 +65,16 @@ import { ApiService } from '../../services/api.service';
                   </p>
                   <h3 class="font-semibold text-base mb-1 line-clamp-1">{{ product.name }}</h3>
                 </a>
-                <p class="text-zinc-400 text-xs mb-3 line-clamp-2">{{ product.description }}</p>
+                <p class="text-zinc-400 text-xs mb-1 line-clamp-2">{{ product.description }}</p>
+                <a
+                  [routerLink]="['/product', product.id]"
+                  class="text-xs text-emerald-400 hover:underline mb-3 inline-block">
+                  Read more
+                </a>
 
                 <div class="flex items-center justify-between gap-2">
                   <div>
-                    <span class="text-lg font-bold">KSH {{ product.base_price || product.price }}</span>
+                    <span class="text-lg font-bold">KSH {{ formatPrice(product.base_price || product.price) }}</span>
                     @if (isInStock(product)) {
                       <p class="text-xs text-emerald-400 mt-0.5">In Stock</p>
                     } @else {
@@ -157,7 +162,7 @@ import { ApiService } from '../../services/api.service';
                 <div class="flex-1 min-w-0">
                   <div class="flex justify-between gap-2">
                     <span class="font-medium truncate">{{ v.flavor }}</span>
-                    <span class="text-emerald-400 font-semibold shrink-0">KSH {{ v.price }}</span>
+                    <span class="text-emerald-400 font-semibold shrink-0">KSH {{ formatPrice(v.price) }}</span>
                   </div>
                   <p class="text-xs text-zinc-500 mt-1">{{ v.stock }} in stock</p>
                 </div>
@@ -256,9 +261,14 @@ export class ProductGridComponent implements OnInit, OnDestroy {
     this.observer = null;
   }
 
+  formatPrice(value: number | string | null | undefined): string {
+    const n = Number(value ?? 0);
+    if (Number.isNaN(n)) return '0';
+    return n.toLocaleString('en-KE');
+  }
+
   private setupIntersectionObserver() {
     this.observer?.disconnect();
-
     this.observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
@@ -266,13 +276,8 @@ export class ProductGridComponent implements OnInit, OnDestroy {
         if (this.loading() || this.loadingMore() || !this.hasMore()) return;
         this.loadNextPage();
       },
-      {
-        root: null,
-        rootMargin: '250px',
-        threshold: 0
-      }
+      { root: null, rootMargin: '250px', threshold: 0 }
     );
-
     this.observeSentinel();
   }
 
@@ -374,12 +379,12 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   }
 
   availableVariants = () => {
-  const p = this.selectedProduct();
-  if (!p?.variants) return [];
-  return p.variants.filter(
-    (v: any) => v.is_available !== false && Number(v.stock) > 0
-  );
-};
+    const p = this.selectedProduct();
+    if (!p?.variants) return [];
+    return p.variants.filter(
+      (v: any) => v.is_available !== false && Number(v.stock) > 0
+    );
+  };
 
   categoryLabel(category: string): string {
     const labels: Record<string, string> = {
@@ -395,29 +400,24 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   }
 
   hasFlavors(product: any): boolean {
-  const variants = product?.variants || [];
-  // True only if at least one option can be bought
-  return variants.some(
-    (v: any) => v.is_available !== false && Number(v.stock) > 0
-  );
-}
-
-isInStock(product: any): boolean {
-  const variants = product?.variants || [];
-
-  // Product with options → in stock if ANY option has stock
-  if (variants.length > 0) {
+    const variants = product?.variants || [];
     return variants.some(
       (v: any) => v.is_available !== false && Number(v.stock) > 0
     );
   }
 
-  // No options → use product stock
-  return (
-    product?.is_available !== false &&
-    (Number(product?.stock) > 0 || product?.in_stock === true)
-  );
-}
+  isInStock(product: any): boolean {
+    const variants = product?.variants || [];
+    if (variants.length > 0) {
+      return variants.some(
+        (v: any) => v.is_available !== false && Number(v.stock) > 0
+      );
+    }
+    return (
+      product?.is_available !== false &&
+      (Number(product?.stock) > 0 || product?.in_stock === true)
+    );
+  }
 
   openFlavorPicker(product: any) {
     this.selectedProduct.set(product);
@@ -437,39 +437,33 @@ isInStock(product: any): boolean {
   }
 
   confirmFlavorAdd() {
-  const product = this.selectedProduct();
-  const variant = this.selectedVariant();
-  if (!product || !variant) return;
-
-  if (variant.stock <= 0) {
-    alert('This flavor is sold out');
-    return;
+    const product = this.selectedProduct();
+    const variant = this.selectedVariant();
+    if (!product || !variant) return;
+    if (variant.stock <= 0) {
+      alert('This flavor is sold out');
+      return;
+    }
+    this.cart.add({
+      ...product,
+      price: variant.price,
+      flavor: variant.flavor,
+      variantId: variant.id,
+      maxStock: variant.stock,
+      image: variant.image || product.image
+    });
   }
-
-  this.cart.add({
-  ...product,
-  price: variant.price,
-  flavor: variant.flavor,
-  variantId: variant.id,
-  maxStock: variant.stock,
-  image: variant.image || product.image   // ← option image
-});
-
-  // Do NOT call closeFlavorPicker() — stay open for more adds
-}
 
   addToCart(product: any) {
     if (!this.isInStock(product)) return;
-
     const stock = Number(product.stock ?? 0);
     if (stock <= 0 && !this.hasFlavors(product)) {
       alert('This product is sold out');
       return;
     }
-
     this.cart.add({
       ...product,
-      price: product.price ?? 0,
+      price: product.price ?? product.base_price ?? 0,
       flavor: product.flavor ?? '',
       variantId: product.variantId ?? null,
       maxStock: product.maxStock ?? product.stock ?? 0,

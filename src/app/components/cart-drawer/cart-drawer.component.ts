@@ -42,7 +42,7 @@ import { CartService } from '../../services/cart.service';
                     <p class="text-xs text-emerald-400 mt-0.5">{{ item.flavor }}</p>
                   }
 
-                  <p class="text-emerald-400 font-semibold mt-1">KSH {{ item.price }}</p>
+                  <p class="text-emerald-400 font-semibold mt-1">KSH {{ formatPrice(item.price ) }}</p>
                   
                   <div class="flex items-center gap-3 mt-3">
                     <button (click)="cart.updateQty(item.product.id, item.flavor || '', item.qty - 1)" 
@@ -86,4 +86,10 @@ export class CartDrawerComponent {
   trackItem(item: any) {
     return item.product.id + '_' + (item.flavor || '');
   }
+
+  formatPrice(value: number | string | null | undefined): string {
+  const n = Number(value ?? 0);
+  if (Number.isNaN(n)) return '0';
+  return n.toLocaleString('en-KE'); // 1200 → 1,200
+}
 }

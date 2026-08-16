@@ -39,13 +39,14 @@ import { ApiService } from '../../services/api.service';
         } @else {
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
 
-<div class="aspect-square rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 flex items-center justify-center relative">
-  <img
-    [src]="displayImage()"
-    [alt]="product().name"
-    [class.img-swap]="imagePulse()"
-    class="w-full h-full object-contain transition-all duration-300">
-</div>
+            <div class="aspect-square rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 flex items-center justify-center relative">
+              <img
+                [src]="displayImage()"
+                [alt]="product().name"
+                [class.img-swap]="imagePulse()"
+                class="w-full h-full object-contain transition-all duration-300">
+            </div>
+
             <div class="flex flex-col">
               <p class="text-xs uppercase tracking-wider text-emerald-400 mb-2">
                 {{ categoryLabel(product().category) }}
@@ -60,7 +61,7 @@ import { ApiService } from '../../services/api.service';
 
               <div class="mb-4">
                 <p class="text-2xl font-bold text-emerald-400">
-                  KSH {{ displayPrice() }}
+                  KSH {{ formatPrice(displayPrice()) }}
                 </p>
                 @if (isInStock(product())) {
                   <p class="text-sm text-emerald-400 mt-1">In Stock</p>
@@ -70,42 +71,40 @@ import { ApiService } from '../../services/api.service';
               </div>
 
               <div class="mb-8">
-                <h2 class="font-semibold text-lg mb-2">Description</h2>
-                <p class="text-zinc-300 leading-relaxed whitespace-pre-line">
-                  {{ product().description || 'No description available.' }}
-                </p>
+               <h2 class="font-semibold text-lg mb-2">Description</h2>
+               <p class="text-zinc-300 leading-relaxed whitespace-pre-line">{{ product().description || 'No description available.' }}</p>
               </div>
 
               @if (hasFlavors(product())) {
-  <div class="mb-6">
-    <h2 class="font-semibold text-lg mb-3">Choose option</h2>
-    <div class="space-y-2">
-      @for (v of availableVariants(); track v.id) {
-        <button
-          type="button"
-          (click)="selectFlavor(v)"
-          class="w-full text-left px-3 py-3 rounded-xl border transition flex gap-3 items-center"
-          [class.border-emerald-500]="mainVariant()?.id === v.id"
-          [class.bg-emerald-500/10]="mainVariant()?.id === v.id"
-          [class.ring-2]="mainVariant()?.id === v.id"
-          [class.ring-emerald-500/40]="mainVariant()?.id === v.id"
-          [class.border-zinc-700]="mainVariant()?.id !== v.id">
-          <img
-            [src]="v.image || product().image"
-            [alt]="v.flavor"
-            class="w-14 h-14 sm:w-12 sm:h-12 rounded-lg object-contain bg-zinc-800 shrink-0 border border-zinc-700">
-          <div class="flex-1 min-w-0">
-            <div class="flex justify-between gap-2">
-              <span class="font-medium">{{ v.flavor }}</span>
-              <span class="text-emerald-400 shrink-0">KSH {{ v.price }}</span>
-            </div>
-            <p class="text-xs text-zinc-500 mt-1">{{ v.stock }} in stock</p>
-          </div>
-        </button>
-      }
-    </div>
-  </div>
-}
+                <div class="mb-6">
+                  <h2 class="font-semibold text-lg mb-3">Choose option</h2>
+                  <div class="space-y-2">
+                    @for (v of availableVariants(); track v.id) {
+                      <button
+                        type="button"
+                        (click)="selectFlavor(v)"
+                        class="w-full text-left px-3 py-3 rounded-xl border transition flex gap-3 items-center"
+                        [class.border-emerald-500]="mainVariant()?.id === v.id"
+                        [class.bg-emerald-500/10]="mainVariant()?.id === v.id"
+                        [class.ring-2]="mainVariant()?.id === v.id"
+                        [class.ring-emerald-500/40]="mainVariant()?.id === v.id"
+                        [class.border-zinc-700]="mainVariant()?.id !== v.id">
+                        <img
+                          [src]="v.image || product().image"
+                          [alt]="v.flavor"
+                          class="w-14 h-14 sm:w-12 sm:h-12 rounded-lg object-contain bg-zinc-800 shrink-0 border border-zinc-700">
+                        <div class="flex-1 min-w-0">
+                          <div class="flex justify-between gap-2">
+                            <span class="font-medium">{{ v.flavor }}</span>
+                            <span class="text-emerald-400 shrink-0">KSH {{ formatPrice(v.price) }}</span>
+                          </div>
+                          <p class="text-xs text-zinc-500 mt-1">{{ v.stock }} in stock</p>
+                        </div>
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
 
               <div class="mt-auto pt-2">
                 @if (!isInStock(product())) {
@@ -161,7 +160,6 @@ import { ApiService } from '../../services/api.service';
                 <div class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-zinc-950 to-transparent z-10 pointer-events-none"></div>
                 <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-zinc-950 to-transparent z-10 pointer-events-none"></div>
 
-                <!-- similar row: wheel + drag -->
                 <div
                   #similarRow
                   class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory similar-scroll"
@@ -185,10 +183,16 @@ import { ApiService } from '../../services/api.service';
                           <h3 class="font-semibold line-clamp-1 mb-1">{{ p.name }}</h3>
                         </a>
                         <p class="text-zinc-400 text-xs mb-3 line-clamp-2">{{ p.description }}</p>
+                        <a
+  [routerLink]="['/product', p.id]"
+  (click)="onCardClick($event)"
+  class="text-xs text-emerald-400 hover:underline mb-3 inline-block">
+  Read more
+</a>
 
                         <div class="flex items-center justify-between gap-2">
                           <div>
-                            <p class="text-emerald-400 font-bold text-sm">KSH {{ p.base_price || p.price }}</p>
+                            <p class="text-emerald-400 font-bold text-sm">KSH {{ formatPrice(p.base_price || p.price) }}</p>
                             @if (isInStock(p)) {
                               <p class="text-xs text-emerald-400 mt-0.5">In Stock</p>
                             } @else {
@@ -234,69 +238,69 @@ import { ApiService } from '../../services/api.service';
     </div>
 
     @if (showFlavorModal()) {
-  <div
-    class="fixed inset-0 bg-black/70 z-[80] flex items-center justify-center p-4"
-    (click)="closeFlavorPicker()">
-    <div
-      class="bg-zinc-950 border border-zinc-700 rounded-2xl w-full max-w-sm max-h-[90vh] flex flex-col"
-      (click)="$event.stopPropagation()">
+      <div
+        class="fixed inset-0 bg-black/70 z-[80] flex items-center justify-center p-4"
+        (click)="closeFlavorPicker()">
+        <div
+          class="bg-zinc-950 border border-zinc-700 rounded-2xl w-full max-w-sm max-h-[90vh] flex flex-col"
+          (click)="$event.stopPropagation()">
 
-      <div class="p-5 pb-0 shrink-0">
-        <h3 class="text-lg font-bold mb-1">{{ pickerProduct()?.name }}</h3>
-        <p class="text-zinc-400 text-sm mb-3">Choose your option</p>
-      </div>
+          <div class="p-5 pb-0 shrink-0">
+            <h3 class="text-lg font-bold mb-1">{{ pickerProduct()?.name }}</h3>
+            <p class="text-zinc-400 text-sm mb-3">Choose your option</p>
+          </div>
 
-      <div class="px-5 shrink-0">
-        <div class="h-36 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-3">
-          <img
-            [src]="pickerVariant()?.image || pickerProduct()?.image"
-            [alt]="pickerVariant()?.flavor || pickerProduct()?.name"
-            class="max-h-full max-w-full object-contain">
+          <div class="px-5 shrink-0">
+            <div class="h-36 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-3">
+              <img
+                [src]="pickerVariant()?.image || pickerProduct()?.image"
+                [alt]="pickerVariant()?.flavor || pickerProduct()?.name"
+                class="max-h-full max-w-full object-contain">
+            </div>
+          </div>
+
+          <div class="flex-1 min-h-0 overflow-y-auto px-5 space-y-2">
+            @for (v of pickerVariants(); track v.id) {
+              <button
+                type="button"
+                (click)="pickerVariant.set(v)"
+                class="w-full text-left px-4 py-3 rounded-xl border transition flex gap-3 items-center"
+                [class.border-emerald-500]="pickerVariant()?.id === v.id"
+                [class.bg-emerald-500/10]="pickerVariant()?.id === v.id"
+                [class.border-zinc-700]="pickerVariant()?.id !== v.id">
+                <img
+                  [src]="v.image || pickerProduct()?.image"
+                  [alt]="v.flavor"
+                  class="w-12 h-12 rounded-lg object-contain bg-zinc-800 shrink-0">
+                <div class="flex-1 min-w-0">
+                  <div class="flex justify-between gap-2">
+                    <span class="font-medium">{{ v.flavor }}</span>
+                    <span class="text-emerald-400 shrink-0">KSH {{ formatPrice(v.price) }}</span>
+                  </div>
+                  <p class="text-xs text-zinc-500 mt-1">{{ v.stock }} in stock</p>
+                </div>
+              </button>
+            }
+          </div>
+
+          <div class="p-5 pt-4 shrink-0 border-t border-zinc-800 flex gap-3">
+            <button
+              type="button"
+              (click)="closeFlavorPicker()"
+              class="flex-1 border border-zinc-700 hover:border-zinc-500 py-2.5 rounded-xl text-sm transition">
+              Cancel
+            </button>
+            <button
+              type="button"
+              (click)="confirmFlavorAdd()"
+              [disabled]="!pickerVariant()"
+              class="flex-1 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-black font-bold py-2.5 rounded-xl text-sm transition">
+              Add to Cart
+            </button>
+          </div>
         </div>
       </div>
-
-      <div class="flex-1 min-h-0 overflow-y-auto px-5 space-y-2">
-        @for (v of pickerVariants(); track v.id) {
-          <button
-            type="button"
-            (click)="pickerVariant.set(v)"
-            class="w-full text-left px-4 py-3 rounded-xl border transition flex gap-3 items-center"
-            [class.border-emerald-500]="pickerVariant()?.id === v.id"
-            [class.bg-emerald-500/10]="pickerVariant()?.id === v.id"
-            [class.border-zinc-700]="pickerVariant()?.id !== v.id">
-            <img
-              [src]="v.image || pickerProduct()?.image"
-              [alt]="v.flavor"
-              class="w-12 h-12 rounded-lg object-contain bg-zinc-800 shrink-0">
-            <div class="flex-1 min-w-0">
-              <div class="flex justify-between gap-2">
-                <span class="font-medium">{{ v.flavor }}</span>
-                <span class="text-emerald-400 shrink-0">KSH {{ v.price }}</span>
-              </div>
-              <p class="text-xs text-zinc-500 mt-1">{{ v.stock }} in stock</p>
-            </div>
-          </button>
-        }
-      </div>
-
-      <div class="p-5 pt-4 shrink-0 border-t border-zinc-800 flex gap-3">
-        <button
-          type="button"
-          (click)="closeFlavorPicker()"
-          class="flex-1 border border-zinc-700 hover:border-zinc-500 py-2.5 rounded-xl text-sm transition">
-          Cancel
-        </button>
-        <button
-          type="button"
-          (click)="confirmFlavorAdd()"
-          [disabled]="!pickerVariant()"
-          class="flex-1 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-black font-bold py-2.5 rounded-xl text-sm transition">
-          Add to Cart
-        </button>
-      </div>
-    </div>
-  </div>
-}
+    }
   `,
   styles: [`
     .similar-scroll {
@@ -304,54 +308,29 @@ import { ApiService } from '../../services/api.service';
       scrollbar-width: thin;
       scrollbar-color: #52525b transparent;
     }
-
     .similar-scroll.is-dragging {
       cursor: grabbing;
       scroll-behavior: auto;
     }
-
     .similar-scroll::-webkit-scrollbar {
       height: 10px;
     }
-
     .similar-scroll::-webkit-scrollbar-thumb {
       background: #52525b;
       border-radius: 999px;
     }
-
     .similar-scroll::-webkit-scrollbar-track {
       background: #18181b;
       border-radius: 999px;
     }
     .img-swap {
-    animation: flavorPop 0.4s ease-out;
-  }
-
-  @keyframes flavorPop {
-    0%   { opacity: 0.35; transform: scale(0.92); }
-    60%  { opacity: 1;    transform: scale(1.03); }
-    100% { opacity: 1;    transform: scale(1); }
-  }
-
-  .similar-scroll {
-    cursor: grab;
-    scrollbar-width: thin;
-    scrollbar-color: #52525b transparent;
-  }
-  .similar-scroll.is-dragging {
-    cursor: grabbing;
-    scroll-behavior: auto;
-  }
-  .similar-scroll::-webkit-scrollbar { height: 10px; }
-  .similar-scroll::-webkit-scrollbar-thumb {
-    background: #52525b;
-    border-radius: 999px;
-  }
-  .similar-scroll::-webkit-scrollbar-track {
-    background: #18181b;
-    border-radius: 999px;
-  }
-
+      animation: flavorPop 0.4s ease-out;
+    }
+    @keyframes flavorPop {
+      0%   { opacity: 0.35; transform: scale(0.92); }
+      60%  { opacity: 1; transform: scale(1.03); }
+      100% { opacity: 1; transform: scale(1); }
+    }
   `]
 })
 export class ProductDetailComponent implements OnInit, OnDestroy {
@@ -367,12 +346,12 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   loading = signal(true);
 
   mainVariant = signal<any>(null);
-
   showFlavorModal = signal(false);
   pickerProduct = signal<any>(null);
   pickerVariant = signal<any>(null);
+  imagePulse = signal(false);
+  descExpanded = signal(false);
 
-  // Drag state (plain fields — always cleared)
   dragging = false;
   private moved = false;
   private startX = 0;
@@ -394,16 +373,29 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     this.teardownWheel();
   }
 
-  /** Attach wheel + drag after similar row exists */
+  formatPrice(value: number | string | null | undefined): string {
+    const n = Number(value ?? 0);
+    if (Number.isNaN(n)) return '0';
+    return n.toLocaleString('en-KE');
+  }
+
+  shortDesc(): string {
+    const text = this.product()?.description || '';
+    const max = 180;
+    if (text.length <= max) return text;
+    return text.slice(0, max).trim() + '…';
+  }
+
+  isLongDesc(): boolean {
+    return (this.product()?.description || '').length > 180;
+  }
+
   private setupRowInteractions() {
     setTimeout(() => {
       const el = this.similarRow()?.nativeElement;
       if (!el) return;
-
-      // Wheel: always works (re-bind cleanly)
       el.removeEventListener('wheel', this.onWheelBound as EventListener);
       el.addEventListener('wheel', this.onWheelBound as EventListener, { passive: false });
-
       el.onmousedown = (e: MouseEvent) => this.startDrag(e);
     }, 0);
   }
@@ -418,8 +410,6 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   private handleWheel(e: WheelEvent) {
     const el = this.similarRow()?.nativeElement;
     if (!el) return;
-
-    // Always allow horizontal scroll via wheel
     if (Math.abs(e.deltaY) >= Math.abs(e.deltaX)) {
       e.preventDefault();
       el.scrollLeft += e.deltaY;
@@ -429,45 +419,32 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   }
 
   private startDrag(e: MouseEvent) {
-    // Only left mouse button
     if (e.button !== 0) return;
-
     const el = this.similarRow()?.nativeElement;
     if (!el) return;
-
     this.dragging = true;
     this.moved = false;
     this.startX = e.pageX;
     this.startScroll = el.scrollLeft;
-
-    // Document-level so mouseup outside still ends drag
     document.addEventListener('mousemove', this.onMove);
     document.addEventListener('mouseup', this.onUp);
     document.addEventListener('mouseleave', this.onUp);
-
     e.preventDefault();
   }
 
   private handleMove(e: MouseEvent) {
     if (!this.dragging) return;
-
     const el = this.similarRow()?.nativeElement;
     if (!el) return;
-
     const dx = e.pageX - this.startX;
     if (Math.abs(dx) > 4) this.moved = true;
-
     el.scrollLeft = this.startScroll - dx;
   }
 
   private endDrag() {
     this.dragging = false;
     this.teardownDragListeners();
-
-    // Small delay so click after drag doesn't navigate
-    setTimeout(() => {
-      this.moved = false;
-    }, 50);
+    setTimeout(() => { this.moved = false; }, 50);
   }
 
   private teardownDragListeners() {
@@ -476,7 +453,6 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     document.removeEventListener('mouseleave', this.onUp);
   }
 
-  /** Block link navigation if user was dragging */
   onCardClick(e: Event) {
     if (this.moved || this.dragging) {
       e.preventDefault();
@@ -487,7 +463,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   scrollSimilar(direction: number) {
     const el = this.similarRow()?.nativeElement;
     if (!el) return;
-    this.endDrag(); // ensure clean state
+    this.endDrag();
     el.scrollBy({ left: direction * 320, behavior: 'smooth' });
   }
 
@@ -500,6 +476,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     this.product.set(null);
     this.similar.set([]);
     this.mainVariant.set(null);
+    this.descExpanded.set(false);
     this.closeFlavorPicker();
 
     this.api.getProduct(id).subscribe({
@@ -532,7 +509,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
           .filter((p: any) => p.id !== excludeId)
           .slice(0, 8);
         this.similar.set(items);
-        this.setupRowInteractions(); // re-bind wheel + drag after DOM updates
+        this.setupRowInteractions();
       },
       error: () => this.similar.set([])
     });
@@ -545,29 +522,24 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   }
 
   hasFlavors(product: any): boolean {
-  const variants = product?.variants || [];
-  // True only if at least one option can be bought
-  return variants.some(
-    (v: any) => v.is_available !== false && Number(v.stock) > 0
-  );
-}
-
-isInStock(product: any): boolean {
-  const variants = product?.variants || [];
-
-  // Product with options → in stock if ANY option has stock
-  if (variants.length > 0) {
+    const variants = product?.variants || [];
     return variants.some(
       (v: any) => v.is_available !== false && Number(v.stock) > 0
     );
   }
 
-  // No options → use product stock
-  return (
-    product?.is_available !== false &&
-    (Number(product?.stock) > 0 || product?.in_stock === true)
-  );
-}
+  isInStock(product: any): boolean {
+    const variants = product?.variants || [];
+    if (variants.length > 0) {
+      return variants.some(
+        (v: any) => v.is_available !== false && Number(v.stock) > 0
+      );
+    }
+    return (
+      product?.is_available !== false &&
+      (Number(product?.stock) > 0 || product?.in_stock === true)
+    );
+  }
 
   displayPrice(): number | string {
     const p = this.product();
@@ -577,12 +549,11 @@ isInStock(product: any): boolean {
   }
 
   displayImage(): string {
-  const variant = this.mainVariant();
-  const product = this.product();
-  // Prefer flavor image when selected
-  if (variant?.image) return variant.image;
-  return product?.image || '';
-}
+    const variant = this.mainVariant();
+    const product = this.product();
+    if (variant?.image) return variant.image;
+    return product?.image || '';
+  }
 
   categoryLabel(category: string): string {
     const labels: Record<string, string> = {
@@ -630,13 +601,11 @@ isInStock(product: any): boolean {
 
   addSimilarToCart(product: any) {
     if (!this.isInStock(product)) return;
-
     const stock = product.stock ?? 0;
     if (stock <= 0 && !this.hasFlavors(product)) {
       alert('This product is sold out');
       return;
     }
-
     this.cart.add(product);
   }
 
@@ -665,34 +634,28 @@ isInStock(product: any): boolean {
     const product = this.pickerProduct();
     const variant = this.pickerVariant();
     if (!product || !variant) return;
-
     if (variant.stock <= 0) {
       alert('This flavor is sold out');
       return;
     }
-
     this.cart.add({
-  ...product,
-  price: variant.price,
-  flavor: variant.flavor,
-  variantId: variant.id,
-  maxStock: variant.stock,
-  image: variant.image || product.image   // ← option image
-});
+      ...product,
+      price: variant.price,
+      flavor: variant.flavor,
+      variantId: variant.id,
+      maxStock: variant.stock,
+      image: variant.image || product.image
+    });
   }
 
-  imagePulse = signal(false);
-
-selectFlavor(v: any) {
-  this.mainVariant.set(v);
-  // Flash so phones notice the image change
-  this.imagePulse.set(false);
-  requestAnimationFrame(() => {
-    this.imagePulse.set(true);
-    setTimeout(() => this.imagePulse.set(false), 400);
-  });
-}
-
+  selectFlavor(v: any) {
+    this.mainVariant.set(v);
+    this.imagePulse.set(false);
+    requestAnimationFrame(() => {
+      this.imagePulse.set(true);
+      setTimeout(() => this.imagePulse.set(false), 400);
+    });
+  }
 
   goBack() {
     this.router.navigate(['/']);
