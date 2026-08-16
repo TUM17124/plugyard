@@ -5,7 +5,8 @@ import {
   OnDestroy,
   signal,
   ElementRef,
-  viewChild
+  viewChild,
+  effect
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -71,8 +72,10 @@ import { ApiService } from '../../services/api.service';
               </div>
 
               <div class="mb-8">
-               <h2 class="font-semibold text-lg mb-2">Description</h2>
-               <p class="text-zinc-300 leading-relaxed whitespace-pre-line">{{ product().description || 'No description available.' }}</p>
+                <h2 class="font-semibold text-lg mb-2">Description</h2>
+                <p class="text-zinc-300 leading-relaxed whitespace-pre-line">
+                  {{ product().description || 'No description available.' }}
+                </p>
               </div>
 
               @if (hasFlavors(product())) {
@@ -162,10 +165,11 @@ import { ApiService } from '../../services/api.service';
 
                 <div
                   #similarRow
-                  class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory similar-scroll"
-                  [class.is-dragging]="dragging">
+                  class="flex gap-4 overflow-x-auto pb-4 similar-scroll"
+                  [class.is-dragging]="dragging"
+                  (mousedown)="startDrag($event)">
                   @for (p of similar(); track p.id) {
-                    <div class="snap-start shrink-0 w-64 sm:w-72 group bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-emerald-500/50 transition">
+                    <div class="shrink-0 w-64 sm:w-72 group bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-emerald-500/50 transition">
                       <a [routerLink]="['/product', p.id]" class="block" (click)="onCardClick($event)">
                         <div class="aspect-square overflow-hidden bg-zinc-800">
                           <img
@@ -182,17 +186,19 @@ import { ApiService } from '../../services/api.service';
                           <p class="text-xs text-emerald-400 uppercase mb-1">{{ categoryLabel(p.category) }}</p>
                           <h3 class="font-semibold line-clamp-1 mb-1">{{ p.name }}</h3>
                         </a>
-                        <p class="text-zinc-400 text-xs mb-3 line-clamp-2">{{ p.description }}</p>
+                        <p class="text-zinc-400 text-xs mb-1 line-clamp-2">{{ p.description }}</p>
                         <a
-  [routerLink]="['/product', p.id]"
-  (click)="onCardClick($event)"
-  class="text-xs text-emerald-400 hover:underline mb-3 inline-block">
-  Read more
-</a>
+                          [routerLink]="['/product', p.id]"
+                          (click)="onCardClick($event)"
+                          class="text-xs text-emerald-400 hover:underline mb-3 inline-block">
+                          Read more
+                        </a>
 
                         <div class="flex items-center justify-between gap-2">
                           <div>
-                            <p class="text-emerald-400 font-bold text-sm">KSH {{ formatPrice(p.base_price || p.price) }}</p>
+                            <p class="text-emerald-400 font-bold text-sm">
+                              KSH {{ formatPrice(p.base_price || p.price) }}
+                            </p>
                             @if (isInStock(p)) {
                               <p class="text-xs text-emerald-400 mt-0.5">In Stock</p>
                             } @else {
@@ -208,14 +214,14 @@ import { ApiService } from '../../services/api.service';
                           } @else if (hasFlavors(p)) {
                             <button
                               type="button"
-                              (click)="openFlavorPicker(p)"
+                              (click)="openFlavorPicker(p); $event.stopPropagation()"
                               class="bg-zinc-100 hover:bg-white text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
                               Choose option
                             </button>
                           } @else {
                             <button
                               type="button"
-                              (click)="addSimilarToCart(p)"
+                              (click)="addSimilarToCart(p); $event.stopPropagation()"
                               class="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
                               Add to Cart
                             </button>
@@ -229,7 +235,7 @@ import { ApiService } from '../../services/api.service';
 
               <p class="text-[10px] text-zinc-500 mt-2 text-center sm:text-left">
                 <span class="sm:hidden">← Swipe to see more →</span>
-                <span class="hidden sm:inline">Scroll wheel, drag, scrollbar, or arrows →</span>
+                <span class="hidden sm:inline">Drag or use scroll wheel to browse →</span>
               </p>
             </div>
           }
@@ -307,13 +313,15 @@ import { ApiService } from '../../services/api.service';
       cursor: grab;
       scrollbar-width: thin;
       scrollbar-color: #52525b transparent;
+      user-select: none;
+      scroll-behavior: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .similar-scroll.is-dragging {
       cursor: grabbing;
-      scroll-behavior: auto;
     }
     .similar-scroll::-webkit-scrollbar {
-      height: 10px;
+      height: 8px;
     }
     .similar-scroll::-webkit-scrollbar-thumb {
       background: #52525b;
@@ -350,16 +358,23 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   pickerProduct = signal<any>(null);
   pickerVariant = signal<any>(null);
   imagePulse = signal(false);
-  descExpanded = signal(false);
 
   dragging = false;
   private moved = false;
   private startX = 0;
   private startScroll = 0;
+  private wheelEl: HTMLElement | null = null;
 
   private onMove = (e: MouseEvent) => this.handleMove(e);
   private onUp = () => this.endDrag();
-  private onWheelBound = (e: WheelEvent) => this.handleWheel(e);
+  private onWheelNative = (e: WheelEvent) => this.handleWheel(e);
+
+  constructor() {
+    effect(() => {
+      this.similar();
+      setTimeout(() => this.attachWheel(), 0);
+    });
+  }
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
@@ -369,67 +384,67 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.teardownDragListeners();
-    this.teardownWheel();
+    this.endDrag();
+    this.detachWheel();
   }
 
-  formatPrice(value: number | string | null | undefined): string {
-    const n = Number(value ?? 0);
-    if (Number.isNaN(n)) return '0';
-    return n.toLocaleString('en-KE');
-  }
-
-  shortDesc(): string {
-    const text = this.product()?.description || '';
-    const max = 180;
-    if (text.length <= max) return text;
-    return text.slice(0, max).trim() + '…';
-  }
-
-  isLongDesc(): boolean {
-    return (this.product()?.description || '').length > 180;
-  }
-
-  private setupRowInteractions() {
-    setTimeout(() => {
-      const el = this.similarRow()?.nativeElement;
-      if (!el) return;
-      el.removeEventListener('wheel', this.onWheelBound as EventListener);
-      el.addEventListener('wheel', this.onWheelBound as EventListener, { passive: false });
-      el.onmousedown = (e: MouseEvent) => this.startDrag(e);
-    }, 0);
-  }
-
-  private teardownWheel() {
+  private attachWheel() {
+    this.detachWheel();
     const el = this.similarRow()?.nativeElement;
     if (!el) return;
-    el.removeEventListener('wheel', this.onWheelBound as EventListener);
-    el.onmousedown = null;
+    this.wheelEl = el;
+    el.addEventListener('wheel', this.onWheelNative, { passive: false });
   }
 
-  private handleWheel(e: WheelEvent) {
-    const el = this.similarRow()?.nativeElement;
-    if (!el) return;
-    if (Math.abs(e.deltaY) >= Math.abs(e.deltaX)) {
-      e.preventDefault();
-      el.scrollLeft += e.deltaY;
-    } else {
-      el.scrollLeft += e.deltaX;
+  private detachWheel() {
+    if (this.wheelEl) {
+      this.wheelEl.removeEventListener('wheel', this.onWheelNative);
+      this.wheelEl = null;
     }
   }
 
-  private startDrag(e: MouseEvent) {
-    if (e.button !== 0) return;
+  /** Fast, responsive vertical wheel → horizontal */
+  private handleWheel(e: WheelEvent) {
     const el = this.similarRow()?.nativeElement;
     if (!el) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Line / page modes → pixel-like steps
+    let delta = e.deltaY;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      delta = e.deltaX;
+    }
+
+    if (e.deltaMode === 1) {
+      // lines
+      delta *= 40;
+    } else if (e.deltaMode === 2) {
+      // pages
+      delta *= el.clientWidth;
+    }
+
+    // Slight boost so one notch moves clearly
+    el.scrollLeft += delta * 1.35;
+  }
+
+  startDrag(e: MouseEvent) {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) return;
+
+    const el = this.similarRow()?.nativeElement;
+    if (!el) return;
+
     this.dragging = true;
     this.moved = false;
     this.startX = e.pageX;
     this.startScroll = el.scrollLeft;
+
     document.addEventListener('mousemove', this.onMove);
     document.addEventListener('mouseup', this.onUp);
     document.addEventListener('mouseleave', this.onUp);
-    e.preventDefault();
   }
 
   private handleMove(e: MouseEvent) {
@@ -437,20 +452,18 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     const el = this.similarRow()?.nativeElement;
     if (!el) return;
     const dx = e.pageX - this.startX;
-    if (Math.abs(dx) > 4) this.moved = true;
+    if (Math.abs(dx) > 5) this.moved = true;
     el.scrollLeft = this.startScroll - dx;
   }
 
   private endDrag() {
     this.dragging = false;
-    this.teardownDragListeners();
-    setTimeout(() => { this.moved = false; }, 50);
-  }
-
-  private teardownDragListeners() {
     document.removeEventListener('mousemove', this.onMove);
     document.removeEventListener('mouseup', this.onUp);
     document.removeEventListener('mouseleave', this.onUp);
+    setTimeout(() => {
+      this.moved = false;
+    }, 40);
   }
 
   onCardClick(e: Event) {
@@ -467,16 +480,21 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     el.scrollBy({ left: direction * 320, behavior: 'smooth' });
   }
 
+  formatPrice(value: number | string | null | undefined): string {
+    const n = Number(value ?? 0);
+    if (Number.isNaN(n)) return '0';
+    return n.toLocaleString('en-KE');
+  }
+
   loadProduct(id: number) {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     this.endDrag();
-    this.teardownWheel();
+    this.detachWheel();
 
     this.loading.set(true);
     this.product.set(null);
     this.similar.set([]);
     this.mainVariant.set(null);
-    this.descExpanded.set(false);
     this.closeFlavorPicker();
 
     this.api.getProduct(id).subscribe({
@@ -509,7 +527,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
           .filter((p: any) => p.id !== excludeId)
           .slice(0, 8);
         this.similar.set(items);
-        this.setupRowInteractions();
+        setTimeout(() => this.attachWheel(), 0);
       },
       error: () => this.similar.set([])
     });

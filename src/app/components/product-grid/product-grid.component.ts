@@ -31,15 +31,12 @@ import { ApiService } from '../../services/api.service';
             } @else if (viewMode() === 'recommended') {
               Shop
             } @else {
-              <!-- Category nav: normal label only — NO admin title/description -->
               {{ navCategoryLabel(viewMode()) }}
             }
           </h2>
           <p class="text-zinc-500 text-sm mt-1">
             @if (viewMode() === 'recommended') {
               Recommended picks for you
-            } @else if (viewMode().startsWith('search:')) {
-              {{ products().length }} of {{ totalCount() }} product{{ totalCount() === 1 ? '' : 's' }}
             } @else {
               {{ products().length }} of {{ totalCount() }} product{{ totalCount() === 1 ? '' : 's' }}
             }
@@ -81,7 +78,6 @@ import { ApiService } from '../../services/api.service';
         </div>
       } @else if (viewMode() === 'recommended') {
 
-        <!-- Home only: admin title + description + layout -->
         @for (section of homeSections(); track section.key) {
           <div class="mb-14">
             <div class="mb-4">
@@ -92,7 +88,30 @@ import { ApiService } from '../../services/api.service';
             </div>
 
             @if (section.layout === 'scroll') {
-              <ng-container *ngTemplateOutlet="scrollLayout; context: { $implicit: section.products }"></ng-container>
+              <div class="relative">
+                <div class="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-zinc-950 to-transparent z-10 pointer-events-none"></div>
+                <div class="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-zinc-950 to-transparent z-10 pointer-events-none"></div>
+
+                <div
+                  class="flex gap-3 sm:gap-4 overflow-x-auto pb-3 snap-x snap-mandatory home-scroll"
+                  [class.is-dragging]="dragId === section.key"
+                  (mousedown)="startDrag($event, section.key, $any($event.currentTarget))"
+                  (wheel)="onWheel($event, $any($event.currentTarget))">
+                  @for (product of section.products; track product.id) {
+                    <div
+                      class="snap-start shrink-0 sm:w-56 lg:w-64"
+                      [class.w-[85%]]="columnsMode() === 1"
+                      [class.w-[46%]]="columnsMode() === 2">
+                      <ng-container *ngTemplateOutlet="card; context: { $implicit: product }"></ng-container>
+                    </div>
+                  }
+                </div>
+
+                <p class="text-[10px] text-zinc-600 mt-1.5 text-center sm:text-left">
+                  <span class="sm:hidden">← Swipe for more →</span>
+                  <span class="hidden sm:inline">Drag or use scroll wheel to browse →</span>
+                </p>
+              </div>
             } @else {
               <ng-container *ngTemplateOutlet="listLayout; context: { $implicit: section.products }"></ng-container>
             }
@@ -101,7 +120,6 @@ import { ApiService } from '../../services/api.service';
 
       } @else {
 
-        <!-- Category / Search: list only, no title/description blocks -->
         <ng-container *ngTemplateOutlet="listLayout; context: { $implicit: products() }"></ng-container>
 
         <div #scrollSentinel class="h-10 w-full" aria-hidden="true"></div>
@@ -126,39 +144,23 @@ import { ApiService } from '../../services/api.service';
       </div>
     </ng-template>
 
-    <ng-template #scrollLayout let-list>
-      <div class="relative">
-        <div class="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-zinc-950 to-transparent z-10 pointer-events-none"></div>
-        <div class="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-zinc-950 to-transparent z-10 pointer-events-none"></div>
-        <div class="flex gap-3 sm:gap-4 overflow-x-auto pb-3 snap-x snap-mandatory">
-          @for (product of list; track product.id) {
-            <div
-              class="snap-start shrink-0 sm:w-56 lg:w-64"
-              [class.w-[85%]]="columnsMode() === 1"
-              [class.w-[46%]]="columnsMode() === 2">
-              <ng-container *ngTemplateOutlet="card; context: { $implicit: product }"></ng-container>
-            </div>
-          }
-        </div>
-        <p class="text-[10px] text-zinc-600 mt-1.5 text-center sm:hidden">
-          ← Swipe for more →
-        </p>
-      </div>
-    </ng-template>
-
     <ng-template #card let-product>
       <div class="group h-full bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-emerald-500/50 transition-all duration-300">
-        <a [routerLink]="['/product', product.id]" class="block">
+        <a
+          [routerLink]="['/product', product.id]"
+          class="block"
+          (click)="onCardClick($event)">
           <div class="aspect-square overflow-hidden bg-zinc-800">
             <img
               [src]="product.image"
               [alt]="product.name"
               class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
-              loading="lazy">
+              loading="lazy"
+              draggable="false">
           </div>
         </a>
         <div class="p-3 sm:p-4">
-          <a [routerLink]="['/product', product.id]">
+          <a [routerLink]="['/product', product.id]" (click)="onCardClick($event)">
             <p class="text-[10px] sm:text-xs uppercase tracking-wider text-emerald-400 mb-1">
               {{ navCategoryLabel(product.category) }}
             </p>
@@ -167,7 +169,8 @@ import { ApiService } from '../../services/api.service';
           <p class="text-zinc-400 text-[11px] sm:text-xs mb-1 line-clamp-2">{{ product.description }}</p>
           <a
             [routerLink]="['/product', product.id]"
-            class="text-[11px] sm:text-xs text-emerald-400 hover:underline mb-2 inline-block">
+            class="text-[11px] sm:text-xs text-emerald-400 hover:underline mb-2 inline-block"
+            (click)="onCardClick($event)">
             Read more
           </a>
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -270,7 +273,30 @@ import { ApiService } from '../../services/api.service';
         </div>
       </div>
     }
-  `
+  `,
+  styles: [`
+    .home-scroll {
+      cursor: grab;
+      scrollbar-width: thin;
+      scrollbar-color: #52525b transparent;
+      user-select: none;
+    }
+    .home-scroll.is-dragging {
+      cursor: grabbing;
+      scroll-behavior: auto;
+    }
+    .home-scroll::-webkit-scrollbar {
+      height: 8px;
+    }
+    .home-scroll::-webkit-scrollbar-thumb {
+      background: #52525b;
+      border-radius: 999px;
+    }
+    .home-scroll::-webkit-scrollbar-track {
+      background: #18181b;
+      border-radius: 999px;
+    }
+  `]
 })
 export class ProductGridComponent implements OnInit, OnDestroy {
   private cart = inject(CartService);
@@ -301,6 +327,16 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   showFlavorModal = signal(false);
   selectedProduct = signal<any>(null);
   selectedVariant = signal<any>(null);
+
+  /** Drag-to-scroll (desktop) for home recommended rows */
+  dragId: string | null = null;
+  private dragEl: HTMLElement | null = null;
+  private dragMoved = false;
+  private startX = 0;
+  private startScroll = 0;
+
+  private onMove = (e: MouseEvent) => this.handleMove(e);
+  private onUp = () => this.endDrag();
 
   private observer: IntersectionObserver | null = null;
   private lastCategory = '';
@@ -344,9 +380,65 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.endDrag();
     this.observer?.disconnect();
     this.observer = null;
   }
+
+  // ---------- Desktop drag + wheel on home scroll rows ----------
+
+  startDrag(e: MouseEvent, id: string, el: HTMLElement) {
+    if (e.button !== 0) return;
+    // Don't start drag from buttons
+    const tag = (e.target as HTMLElement)?.closest('button, a');
+    if (tag && tag.tagName === 'BUTTON') return;
+
+    this.dragId = id;
+    this.dragEl = el;
+    this.dragMoved = false;
+    this.startX = e.pageX;
+    this.startScroll = el.scrollLeft;
+
+    document.addEventListener('mousemove', this.onMove);
+    document.addEventListener('mouseup', this.onUp);
+    document.addEventListener('mouseleave', this.onUp);
+  }
+
+  private handleMove(e: MouseEvent) {
+    if (!this.dragEl || this.dragId == null) return;
+    const dx = e.pageX - this.startX;
+    if (Math.abs(dx) > 5) this.dragMoved = true;
+    this.dragEl.scrollLeft = this.startScroll - dx;
+  }
+
+  private endDrag() {
+    this.dragId = null;
+    this.dragEl = null;
+    document.removeEventListener('mousemove', this.onMove);
+    document.removeEventListener('mouseup', this.onUp);
+    document.removeEventListener('mouseleave', this.onUp);
+    setTimeout(() => {
+      this.dragMoved = false;
+    }, 40);
+  }
+
+  onWheel(e: WheelEvent, el: HTMLElement) {
+    if (Math.abs(e.deltaY) >= Math.abs(e.deltaX)) {
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    } else {
+      el.scrollLeft += e.deltaX;
+    }
+  }
+
+  onCardClick(e: Event) {
+    if (this.dragMoved || this.dragId) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
+
+  // ---------- Rest ----------
 
   private parseList(data: any): any[] {
     if (Array.isArray(data)) return data;
@@ -367,7 +459,6 @@ export class ProductGridComponent implements OnInit, OnDestroy {
     return n.toLocaleString('en-KE');
   }
 
-  /** Fixed labels for nav / product cards — never admin marketing titles */
   navCategoryLabel(category: string): string {
     const labels: Record<string, string> = {
       vape: 'Vapes',
