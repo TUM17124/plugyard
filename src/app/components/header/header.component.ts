@@ -2,6 +2,7 @@ import { Component, inject, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CartService } from '../../services/cart.service';
+import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-header',
@@ -11,15 +12,12 @@ import { CartService } from '../../services/cart.service';
     <header class="sticky top-0 z-50 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4">
 
-        <!-- Top row -->
         <div class="flex items-center justify-between gap-3">
-          <!-- Logo -->
           <div class="flex items-center gap-1 cursor-pointer shrink-0" (click)="goHome()">
             <span class="text-2xl sm:text-3xl font-black tracking-tighter text-emerald-400">PLUG</span>
             <span class="text-2xl sm:text-3xl font-light text-white">YARD</span>
           </div>
 
-          <!-- Search (desktop) -->
           <div class="hidden sm:flex flex-1 max-w-md mx-4">
             <div class="relative w-full">
               <input
@@ -34,15 +32,16 @@ import { CartService } from '../../services/cart.service';
               </svg>
             </div>
             <button
+              type="button"
               (click)="submitSearch()"
               class="ml-2 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-4 py-2.5 rounded-full text-sm transition shrink-0">
               Search
             </button>
           </div>
 
-          <!-- Orders + Cart -->
           <div class="flex items-center gap-2 shrink-0">
             <button
+              type="button"
               (click)="openOrders.emit()"
               class="relative flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 px-3 sm:px-4 py-2.5 rounded-full border border-zinc-700 transition-all">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -53,6 +52,7 @@ import { CartService } from '../../services/cart.service';
             </button>
 
             <button
+              type="button"
               (click)="openCart.emit()"
               class="relative flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 px-3 sm:px-4 py-2.5 rounded-full border border-zinc-700 transition-all">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -69,7 +69,6 @@ import { CartService } from '../../services/cart.service';
           </div>
         </div>
 
-        <!-- Search (mobile) -->
         <div class="sm:hidden mt-3 flex gap-2">
           <input
             type="search"
@@ -79,18 +78,15 @@ import { CartService } from '../../services/cart.service';
             class="flex-1 bg-zinc-900 border border-zinc-700 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-emerald-500"
           />
           <button
+            type="button"
             (click)="submitSearch()"
             class="bg-emerald-500 text-black font-semibold px-4 py-2 rounded-full text-sm">
             Go
           </button>
         </div>
 
-        <!-- Categories (scrollable on phone) -->
         <div class="relative mt-4">
-          <!-- Left fade -->
           <div class="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-zinc-950 to-transparent z-10 pointer-events-none sm:hidden"></div>
-
-          <!-- Right fade + arrow -->
           <div class="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-zinc-950 to-transparent z-10 pointer-events-none sm:hidden flex items-center justify-end pr-1">
             <span class="text-zinc-500 text-sm animate-pulse">›</span>
           </div>
@@ -98,6 +94,7 @@ import { CartService } from '../../services/cart.service';
           <nav class="flex gap-2 sm:gap-3 overflow-x-auto pb-1 scrollbar-hide px-1">
             @for (cat of categories; track cat.value) {
               <button
+                type="button"
                 (click)="onSelect(cat.value)"
                 class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition shrink-0"
                 [class.bg-emerald-500]="activeCategory() === cat.value"
@@ -110,11 +107,9 @@ import { CartService } from '../../services/cart.service';
           </nav>
         </div>
 
-        <!-- Swipe hint (phones only) -->
         <p class="text-[10px] text-zinc-600 mt-1.5 sm:hidden text-center">
           ← Swipe to see more categories →
         </p>
-
       </div>
     </header>
   `,
@@ -128,6 +123,7 @@ import { CartService } from '../../services/cart.service';
 })
 export class HeaderComponent {
   cart = inject(CartService);
+  private api = inject(ApiService);
 
   openCart = output<void>();
   openOrders = output<void>();
@@ -162,5 +158,9 @@ export class HeaderComponent {
     if (!q) return;
     this.activeCategory.set('');
     this.search.emit(q);
+
+    this.api.logSearch(q).subscribe({
+      error: (err) => console.error('logSearch failed', err)
+    });
   }
 }
