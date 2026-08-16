@@ -31,19 +31,21 @@ import { ApiService } from '../../services/api.service';
             } @else if (viewMode() === 'recommended') {
               Shop
             } @else {
-              {{ sectionTitle(viewMode()) }}
+              <!-- Category nav: normal label only — NO admin title/description -->
+              {{ navCategoryLabel(viewMode()) }}
             }
           </h2>
           <p class="text-zinc-500 text-sm mt-1">
             @if (viewMode() === 'recommended') {
-              Recommended picks and shop by category
+              Recommended picks for you
+            } @else if (viewMode().startsWith('search:')) {
+              {{ products().length }} of {{ totalCount() }} product{{ totalCount() === 1 ? '' : 's' }}
             } @else {
               {{ products().length }} of {{ totalCount() }} product{{ totalCount() === 1 ? '' : 's' }}
             }
           </p>
         </div>
 
-        <!-- Density: phones only -->
         <div class="flex sm:hidden items-center gap-2 self-start">
           <span class="text-xs text-zinc-500">View</span>
           <button
@@ -79,42 +81,28 @@ import { ApiService } from '../../services/api.service';
         </div>
       } @else if (viewMode() === 'recommended') {
 
-        @if (recommended().length > 0) {
+        <!-- Home only: admin title + description + layout -->
+        @for (section of homeSections(); track section.key) {
           <div class="mb-14">
             <div class="mb-4">
-              <h3 class="text-xl sm:text-2xl font-bold">Recommended for you</h3>
-              <p class="text-zinc-500 text-sm mt-1">Hand-picked products we think you’ll like.</p>
-            </div>
-            <ng-container *ngTemplateOutlet="listLayout; context: { $implicit: recommended() }"></ng-container>
-          </div>
-        }
-
-        @for (section of homeSections(); track section.key) {
-          @if (section.products.length > 0) {
-            <div class="mb-14">
-              <div class="mb-4">
-                <h3 class="text-xl sm:text-2xl font-bold">{{ section.title }}</h3>
-                @if (section.description) {
-                  <p class="text-zinc-500 text-sm mt-1">{{ section.description }}</p>
-                }
-              </div>
-
-              @if (section.layout === 'scroll') {
-                <ng-container *ngTemplateOutlet="scrollLayout; context: { $implicit: section.products }"></ng-container>
-              } @else {
-                <ng-container *ngTemplateOutlet="listLayout; context: { $implicit: section.products }"></ng-container>
+              <h3 class="text-xl sm:text-2xl font-bold">{{ section.title }}</h3>
+              @if (section.description) {
+                <p class="text-zinc-500 text-sm mt-1">{{ section.description }}</p>
               }
             </div>
-          }
+
+            @if (section.layout === 'scroll') {
+              <ng-container *ngTemplateOutlet="scrollLayout; context: { $implicit: section.products }"></ng-container>
+            } @else {
+              <ng-container *ngTemplateOutlet="listLayout; context: { $implicit: section.products }"></ng-container>
+            }
+          </div>
         }
 
       } @else {
 
-        @if (activeLayout() === 'scroll') {
-          <ng-container *ngTemplateOutlet="scrollLayout; context: { $implicit: products() }"></ng-container>
-        } @else {
-          <ng-container *ngTemplateOutlet="listLayout; context: { $implicit: products() }"></ng-container>
-        }
+        <!-- Category / Search: list only, no title/description blocks -->
+        <ng-container *ngTemplateOutlet="listLayout; context: { $implicit: products() }"></ng-container>
 
         <div #scrollSentinel class="h-10 w-full" aria-hidden="true"></div>
 
@@ -172,7 +160,7 @@ import { ApiService } from '../../services/api.service';
         <div class="p-3 sm:p-4">
           <a [routerLink]="['/product', product.id]">
             <p class="text-[10px] sm:text-xs uppercase tracking-wider text-emerald-400 mb-1">
-              {{ categoryLabel(product.category) }}
+              {{ navCategoryLabel(product.category) }}
             </p>
             <h3 class="font-semibold text-sm sm:text-base mb-1 line-clamp-1">{{ product.name }}</h3>
           </a>
@@ -360,7 +348,6 @@ export class ProductGridComponent implements OnInit, OnDestroy {
     this.observer = null;
   }
 
-  /** Handle plain array or paginated { results: [] } */
   private parseList(data: any): any[] {
     if (Array.isArray(data)) return data;
     if (data?.results && Array.isArray(data.results)) return data.results;
@@ -369,10 +356,7 @@ export class ProductGridComponent implements OnInit, OnDestroy {
 
   hasAnyContent(): boolean {
     if (this.viewMode() === 'recommended') {
-      return (
-        this.recommended().length > 0 ||
-        this.homeSections().some(s => s.products.length > 0)
-      );
+      return this.homeSections().some(s => s.products.length > 0);
     }
     return this.products().length > 0;
   }
@@ -383,109 +367,121 @@ export class ProductGridComponent implements OnInit, OnDestroy {
     return n.toLocaleString('en-KE');
   }
 
-  /**
-   * Home: categories from API → recommended → products (page 1+2) → sections
-   */
+  /** Fixed labels for nav / product cards — never admin marketing titles */
+  navCategoryLabel(category: string): string {
+    const labels: Record<string, string> = {
+      vape: 'Vapes',
+      eliquid: 'E-Liquids',
+      bong: 'Bongs',
+      rollingpaper: 'Rolling Papers',
+      cigar: 'Cigars',
+      accessory: 'Accessories'
+    };
+    return labels[category] || category;
+  }
+
   loadHome() {
-  this.loading.set(true);
-  this.viewMode.set('recommended');
-  this.products.set([]);
-  this.recommended.set([]);
-  this.homeSections.set([]);
-  this.hasMore.set(false);
+    this.loading.set(true);
+    this.viewMode.set('recommended');
+    this.products.set([]);
+    this.recommended.set([]);
+    this.homeSections.set([]);
+    this.hasMore.set(false);
 
-  this.api.getCategories().subscribe({
-    next: (catData) => {
-      const cats = this.parseList(catData).filter(
-        (c: any) => c.show_on_home !== false
-      );
-      this.categories.set(cats);
+    this.api.getCategories().subscribe({
+      next: (catData) => {
+        const cats = this.parseList(catData).filter(
+          (c: any) => c.show_on_home !== false
+        );
+        this.categories.set(cats);
 
-      // Recommended block
-      this.api.getProducts({ recommended: true, page: 1 }).subscribe({
-        next: (rec) => this.recommended.set(rec.results || []),
-        error: () => this.recommended.set([])
-      });
+        this.api.getProducts({ recommended: true, page: 1 }).subscribe({
+          next: (rec) => {
+            let recommendedList = rec.results || [];
+            this.recommended.set(recommendedList);
 
-      if (cats.length === 0) {
-        this.loading.set(false);
-        this.cdr.detectChanges();
-        return;
-      }
+            const buildSections = (list: any[]) => {
+              const sections = cats
+                .map((c: any) => ({
+                  key: c.key,
+                  title: c.title || c.key,
+                  description: c.description || '',
+                  layout: (c.layout === 'scroll' ? 'scroll' : 'list') as 'list' | 'scroll',
+                  products: list.filter(
+                    (p: any) =>
+                      String(p.category).toLowerCase() === String(c.key).toLowerCase()
+                  )
+                }))
+                .filter((s) => s.products.length > 0);
 
-      // Load products PER category from API (reliable)
-      let pending = cats.length;
-      const sections: {
-        key: string;
-        title: string;
-        description: string;
-        layout: 'list' | 'scroll';
-        products: any[];
-      }[] = [];
+              const knownKeys = new Set(
+                cats.map((c: any) => String(c.key).toLowerCase())
+              );
+              const orphans = list.filter(
+                (p: any) => !knownKeys.has(String(p.category).toLowerCase())
+              );
+              if (orphans.length > 0) {
+                sections.push({
+                  key: 'other',
+                  title: 'More picks',
+                  description: '',
+                  layout: 'list',
+                  products: orphans
+                });
+              }
 
-      cats.forEach((c: any, index: number) => {
-        this.api.getProducts({ category: c.key, page: 1 }).subscribe({
-          next: (res) => {
-            sections[index] = {
-              key: c.key,
-              title: c.title || c.key,
-              description: c.description || '',
-              layout: c.layout === 'scroll' ? 'scroll' : 'list',
-              products: res.results || []
-            };
-            pending--;
-            if (pending === 0) {
-              // Keep admin sort_order
-              this.homeSections.set(sections.filter(Boolean));
+              this.homeSections.set(sections);
               this.loading.set(false);
               this.cdr.detectChanges();
+            };
+
+            if (rec.next) {
+              this.api.getProducts({ recommended: true, page: 2 }).subscribe({
+                next: (page2) => {
+                  recommendedList = [...recommendedList, ...(page2.results || [])];
+                  this.recommended.set(recommendedList);
+                  buildSections(recommendedList);
+                },
+                error: () => buildSections(recommendedList)
+              });
+            } else {
+              buildSections(recommendedList);
             }
           },
           error: () => {
-            sections[index] = {
-              key: c.key,
-              title: c.title || c.key,
-              description: c.description || '',
-              layout: c.layout === 'scroll' ? 'scroll' : 'list',
-              products: []
-            };
-            pending--;
-            if (pending === 0) {
-              this.homeSections.set(sections.filter(Boolean));
-              this.loading.set(false);
-              this.cdr.detectChanges();
-            }
+            this.recommended.set([]);
+            this.homeSections.set([]);
+            this.loading.set(false);
+            this.cdr.detectChanges();
           }
         });
-      });
-    },
-    error: (err) => {
-      console.error('getCategories failed', err);
-      this.api.getProducts({ recommended: true, page: 1 }).subscribe({
-        next: (rec) => {
-          this.recommended.set(rec.results || []);
-          this.loading.set(false);
-          this.cdr.detectChanges();
-        },
-        error: () => {
-          this.loading.set(false);
-          this.cdr.detectChanges();
-        }
-      });
-    }
-  });
-}
-
-  activeLayout(): 'list' | 'scroll' {
-    const mode = this.viewMode();
-    if (mode.startsWith('search:')) return 'list';
-    const cat = this.categories().find((c: any) => c.key === mode);
-    return cat?.layout === 'scroll' ? 'scroll' : 'list';
-  }
-
-  sectionTitle(key: string): string {
-    const cat = this.categories().find((c: any) => c.key === key);
-    return cat?.title || this.categoryLabel(key);
+      },
+      error: () => {
+        this.api.getProducts({ recommended: true, page: 1 }).subscribe({
+          next: (rec) => {
+            const list = rec.results || [];
+            this.recommended.set(list);
+            if (list.length) {
+              this.homeSections.set([
+                {
+                  key: 'recommended',
+                  title: 'Recommended for you',
+                  description: 'Hand-picked products we think you’ll like.',
+                  layout: 'list',
+                  products: list
+                }
+              ]);
+            }
+            this.loading.set(false);
+            this.cdr.detectChanges();
+          },
+          error: () => {
+            this.loading.set(false);
+            this.cdr.detectChanges();
+          }
+        });
+      }
+    });
   }
 
   private setupIntersectionObserver() {
@@ -531,7 +527,6 @@ export class ProductGridComponent implements OnInit, OnDestroy {
     this.homeSections.set([]);
     this.recommended.set([]);
 
-    // Ensure categories loaded for titles/layout
     if (this.categories().length === 0) {
       this.api.getCategories().subscribe({
         next: (data) => {
@@ -545,7 +540,11 @@ export class ProductGridComponent implements OnInit, OnDestroy {
     }
   }
 
-  private fetchPage(params: { recommended?: boolean; category?: string; search?: string }) {
+  private fetchPage(params: {
+    recommended?: boolean;
+    category?: string;
+    search?: string;
+  }) {
     this.api.getProducts({ ...params, page: 1 }).subscribe({
       next: (res) => {
         this.products.set(res.results || []);
@@ -612,22 +611,6 @@ export class ProductGridComponent implements OnInit, OnDestroy {
       (v: any) => v.is_available !== false && Number(v.stock) > 0
     );
   };
-
-  categoryLabel(category: string): string {
-    const cat = this.categories().find(
-      (c: any) => String(c.key).toLowerCase() === String(category).toLowerCase()
-    );
-    if (cat?.title) return cat.title;
-    const fallback: Record<string, string> = {
-      vape: 'Vapes',
-      eliquid: 'E-Liquids',
-      bong: 'Bongs',
-      rollingpaper: 'Rolling Papers',
-      cigar: 'Cigars',
-      accessory: 'Accessories'
-    };
-    return fallback[category] || category;
-  }
 
   hasFlavors(product: any): boolean {
     const variants = product?.variants || [];
