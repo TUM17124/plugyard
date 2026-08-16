@@ -54,7 +54,7 @@ logSearch(query: string, resultsCount = 0) {
   });
 }
 
-getCategories(): Observable<any[]> {
-  return this.http.get<any[]>(`${this.baseUrl}/categories/`);
+getCategories() {
+  return this.http.get<any>(`${this.baseUrl}/categories/`);
 }
 }

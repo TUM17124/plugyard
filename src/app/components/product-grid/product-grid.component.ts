@@ -43,7 +43,7 @@ import { ApiService } from '../../services/api.service';
           </p>
         </div>
 
-        <!-- Density toggle: phones only -->
+        <!-- Density: phones only -->
         <div class="flex sm:hidden items-center gap-2 self-start">
           <span class="text-xs text-zinc-500">View</span>
           <button
@@ -127,7 +127,6 @@ import { ApiService } from '../../services/api.service';
       }
     </section>
 
-    <!-- LIST: 1/2 on phone, 2–3 tablet, 4 on desktop -->
     <ng-template #listLayout let-list>
       <div
         class="grid gap-3 sm:gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
@@ -139,7 +138,6 @@ import { ApiService } from '../../services/api.service';
       </div>
     </ng-template>
 
-    <!-- SCROLL: horizontal (backend layout) -->
     <ng-template #scrollLayout let-list>
       <div class="relative">
         <div class="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-zinc-950 to-transparent z-10 pointer-events-none"></div>
@@ -154,7 +152,7 @@ import { ApiService } from '../../services/api.service';
             </div>
           }
         </div>
-        <p class="text-[10px] text-zinc-600 mt-1.5 text-center sm:text-left sm:hidden">
+        <p class="text-[10px] text-zinc-600 mt-1.5 text-center sm:hidden">
           ← Swipe for more →
         </p>
       </div>
@@ -306,8 +304,6 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   loading = signal(true);
   loadingMore = signal(false);
   viewMode = signal<string>('recommended');
-
-  /** Phones only: 1 or 2 columns */
   columnsMode = signal<1 | 2>(2);
 
   currentPage = signal(1);
@@ -354,7 +350,6 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.loadCategories();
     if (!this.selectedCategory() && !this.searchQuery()?.trim()) {
       this.loadHome();
     }
@@ -363,6 +358,13 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.observer?.disconnect();
     this.observer = null;
+  }
+
+  /** Handle plain array or paginated { results: [] } */
+  private parseList(data: any): any[] {
+    if (Array.isArray(data)) return data;
+    if (data?.results && Array.isArray(data.results)) return data.results;
+    return [];
   }
 
   hasAnyContent(): boolean {
@@ -381,17 +383,9 @@ export class ProductGridComponent implements OnInit, OnDestroy {
     return n.toLocaleString('en-KE');
   }
 
-  loadCategories() {
-    this.api.getCategories().subscribe({
-      next: (data: any) => {
-        const list = Array.isArray(data) ? data : data?.results || [];
-        this.categories.set(list);
-        this.cdr.detectChanges();
-      },
-      error: () => this.categories.set([])
-    });
-  }
-
+  /**
+   * Home: categories from API → recommended → products (page 1+2) → sections
+   */
   loadHome() {
     this.loading.set(true);
     this.viewMode.set('recommended');
@@ -400,56 +394,93 @@ export class ProductGridComponent implements OnInit, OnDestroy {
     this.homeSections.set([]);
     this.hasMore.set(false);
 
-    const build = (all: any[], recommendedList: any[]) => {
-      this.recommended.set(recommendedList);
-      const cats = this.categories().filter(
-        (c: any) => c.show_on_home !== false && c.is_active !== false
-      );
-      const sections = cats.map((c: any) => ({
-        key: c.key,
-        title: c.title || c.key,
-        description: c.description || '',
-        layout: (c.layout === 'scroll' ? 'scroll' : 'list') as 'list' | 'scroll',
-        products: all.filter((p: any) => p.category === c.key)
-      }));
-      this.homeSections.set(sections);
-      this.loading.set(false);
-      this.cdr.detectChanges();
-    };
+    this.api.getCategories().subscribe({
+      next: (catData) => {
+        const cats = this.parseList(catData).filter(
+          (c: any) => c.show_on_home !== false
+        );
+        this.categories.set(cats);
 
-    const run = () => {
-      this.api.getProducts({ recommended: true, page: 1 }).subscribe({
-        next: (rec) => {
-          const recommendedList = rec.results || [];
-          this.api.getProducts({ page: 1 }).subscribe({
-            next: (res) => build(res.results || [], recommendedList),
-            error: () => build([], recommendedList)
-          });
-        },
-        error: () => {
-          this.api.getProducts({ page: 1 }).subscribe({
-            next: (res) => build(res.results || [], []),
-            error: () => {
-              this.loading.set(false);
-              this.cdr.detectChanges();
-            }
-          });
-        }
-      });
-    };
+        this.api.getProducts({ recommended: true, page: 1 }).subscribe({
+          next: (rec) => {
+            const recommendedList = rec.results || [];
+            this.recommended.set(recommendedList);
 
-    if (this.categories().length === 0) {
-      this.api.getCategories().subscribe({
-        next: (data: any) => {
-          const list = Array.isArray(data) ? data : data?.results || [];
-          this.categories.set(list);
-          run();
-        },
-        error: () => run()
-      });
-    } else {
-      run();
-    }
+            this.api.getProducts({ page: 1 }).subscribe({
+              next: (page1) => {
+                let all = [...(page1.results || [])];
+
+                const finish = (products: any[]) => {
+                  const sections = cats.map((c: any) => ({
+                    key: c.key,
+                    title: c.title || c.key,
+                    description: c.description || '',
+                    layout: (c.layout === 'scroll' ? 'scroll' : 'list') as 'list' | 'scroll',
+                    products: products.filter(
+                      (p: any) => String(p.category).toLowerCase() === String(c.key).toLowerCase()
+                    )
+                  }));
+
+                  this.homeSections.set(sections);
+                  this.loading.set(false);
+                  this.cdr.detectChanges();
+                };
+
+                if (page1.next) {
+                  this.api.getProducts({ page: 2 }).subscribe({
+                    next: (page2) => finish([...all, ...(page2.results || [])]),
+                    error: () => finish(all)
+                  });
+                } else {
+                  finish(all);
+                }
+              },
+              error: () => {
+                this.loading.set(false);
+                this.cdr.detectChanges();
+              }
+            });
+          },
+          error: () => {
+            this.api.getProducts({ page: 1 }).subscribe({
+              next: (page1) => {
+                const all = page1.results || [];
+                const sections = cats.map((c: any) => ({
+                  key: c.key,
+                  title: c.title || c.key,
+                  description: c.description || '',
+                  layout: (c.layout === 'scroll' ? 'scroll' : 'list') as 'list' | 'scroll',
+                  products: all.filter(
+                    (p: any) => String(p.category).toLowerCase() === String(c.key).toLowerCase()
+                  )
+                }));
+                this.homeSections.set(sections);
+                this.loading.set(false);
+                this.cdr.detectChanges();
+              },
+              error: () => {
+                this.loading.set(false);
+                this.cdr.detectChanges();
+              }
+            });
+          }
+        });
+      },
+      error: () => {
+        // No categories — still show recommended
+        this.api.getProducts({ recommended: true, page: 1 }).subscribe({
+          next: (rec) => {
+            this.recommended.set(rec.results || []);
+            this.loading.set(false);
+            this.cdr.detectChanges();
+          },
+          error: () => {
+            this.loading.set(false);
+            this.cdr.detectChanges();
+          }
+        });
+      }
+    });
   }
 
   activeLayout(): 'list' | 'scroll' {
@@ -507,6 +538,21 @@ export class ProductGridComponent implements OnInit, OnDestroy {
     this.homeSections.set([]);
     this.recommended.set([]);
 
+    // Ensure categories loaded for titles/layout
+    if (this.categories().length === 0) {
+      this.api.getCategories().subscribe({
+        next: (data) => {
+          this.categories.set(this.parseList(data));
+          this.fetchPage(params);
+        },
+        error: () => this.fetchPage(params)
+      });
+    } else {
+      this.fetchPage(params);
+    }
+  }
+
+  private fetchPage(params: { recommended?: boolean; category?: string; search?: string }) {
     this.api.getProducts({ ...params, page: 1 }).subscribe({
       next: (res) => {
         this.products.set(res.results || []);
@@ -575,7 +621,9 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   };
 
   categoryLabel(category: string): string {
-    const cat = this.categories().find((c: any) => c.key === category);
+    const cat = this.categories().find(
+      (c: any) => String(c.key).toLowerCase() === String(category).toLowerCase()
+    );
     if (cat?.title) return cat.title;
     const fallback: Record<string, string> = {
       vape: 'Vapes',
