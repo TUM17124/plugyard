@@ -40,7 +40,7 @@ import { ApiService } from '../../services/api.service';
         } @else {
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
 
-            <div class="aspect-square rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 flex items-center justify-center relative">
+            <div class="aspect-square rounded-2xl overflow-hidden   flex items-center justify-center relative">
               <img
                 [src]="displayImage()"
                 [alt]="product().name"
