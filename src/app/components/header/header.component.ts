@@ -148,14 +148,14 @@ export class HeaderComponent {
   this.searchQuery = '';
   this.selectCategory.emit(category);
 
-  // ONLY when the user clicks Home from the category navigation
-  if (category === 'recommended') {
+  // ONLY on phones, and ONLY when Home is selected
+  if (category === 'recommended' && window.innerWidth < 768) {
     setTimeout(() => {
       const productList = document.getElementById('product-list');
 
       if (!productList) return;
 
-      const offset = 150; // 12rem sticky View bar + a little spacing
+      const offset = 150; // Keeps the sticky View bar from covering the title
 
       const targetPosition =
         productList.getBoundingClientRect().top +
@@ -164,6 +164,7 @@ export class HeaderComponent {
 
       window.scrollTo({
         top: Math.max(0, targetPosition),
+        left: 0,
         behavior: 'smooth'
       });
     }, 100);
