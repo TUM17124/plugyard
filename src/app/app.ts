@@ -37,7 +37,7 @@ import { ShopFilterService } from './services/shop-filter.service';
       <div class="max-w-7xl mx-auto px-4 text-center text-zinc-500 text-sm space-y-4">
         <p class="text-zinc-400 font-medium text-base">PlugYard</p>
         <p>
-          Contact:
+          Email:
           <a href="mailto:contact@plugyard.com" class="text-emerald-400 hover:underline">
             contact@plugyard.com
           </a>
