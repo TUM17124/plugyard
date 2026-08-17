@@ -144,14 +144,54 @@ export class HeaderComponent {
   ];
 
   onSelect(category: string) {
-    this.activeCategory.set(category);
-    this.searchQuery = '';
-    this.selectCategory.emit(category);
+  this.activeCategory.set(category);
+  this.searchQuery = '';
+  this.selectCategory.emit(category);
+
+  // ONLY when the user clicks Home from the category navigation
+  if (category === 'recommended') {
+    setTimeout(() => {
+      const productList = document.getElementById('product-list');
+
+      if (!productList) return;
+
+      const offset = 150; // 12rem sticky View bar + a little spacing
+
+      const targetPosition =
+        productList.getBoundingClientRect().top +
+        window.scrollY -
+        offset;
+
+      window.scrollTo({
+        top: Math.max(0, targetPosition),
+        behavior: 'smooth'
+      });
+    }, 100);
   }
+}
 
   goHome() {
-    this.onSelect('recommended');
-  }
+  this.onSelect('recommended');
+
+  setTimeout(() => {
+    if (window.innerWidth < 768) {
+      const productList = document.getElementById('product-list');
+
+      if (productList) {
+        const top =
+          productList.getBoundingClientRect().top +
+          window.scrollY -
+          150;
+
+        window.scrollTo({
+          top,
+          left: 0,
+          behavior: 'smooth'
+        });
+      }
+    }
+  }, 300);
+}
 
   submitSearch() {
     const q = this.searchQuery.trim();

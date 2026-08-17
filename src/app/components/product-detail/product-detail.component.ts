@@ -169,66 +169,94 @@ import { ApiService } from '../../services/api.service';
                   [class.is-dragging]="dragging"
                   (mousedown)="startDrag($event)">
                   @for (p of similar(); track p.id) {
-                    <div class="shrink-0 w-64 sm:w-72 group bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-emerald-500/50 transition">
-                      <a [routerLink]="['/product', p.id]" class="block" (click)="onCardClick($event)">
-                        <div class="aspect-square overflow-hidden bg-zinc-800">
-                          <img
-                            [src]="p.image"
-                            [alt]="p.name"
-                            class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
-                            loading="lazy"
-                            draggable="false">
-                        </div>
-                      </a>
+                    <div class="shrink-0 w-64 sm:w-72 group overflow-hidden transition">
+  <a [routerLink]="['/product', p.id]" class="block" (click)="onCardClick($event)">
+    <div class="aspect-square overflow-hidden">
+      <img 
+        [src]="p.image" 
+        [alt]="p.name" 
+        class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" 
+        loading="lazy" 
+        draggable="false">
+    </div>
+  </a>
 
-                      <div class="p-4">
-                        <a [routerLink]="['/product', p.id]" (click)="onCardClick($event)">
-                          <p class="text-xs text-emerald-400 uppercase mb-1">{{ categoryLabel(p.category) }}</p>
-                          <h3 class="font-semibold line-clamp-1 mb-1">{{ p.name }}</h3>
-                        </a>
-                        <p class="text-zinc-400 text-xs mb-1 line-clamp-2">{{ p.description }}</p>
-                        <a
-                          [routerLink]="['/product', p.id]"
-                          (click)="onCardClick($event)"
-                          class="text-xs text-emerald-400 hover:underline mb-3 inline-block">
-                          Read more
-                        </a>
+  <div class="p-4">
+    <a [routerLink]="['/product', p.id]" (click)="onCardClick($event)">
 
-                        <div class="flex items-center justify-between gap-2">
-                          <div>
-                            <p class="text-emerald-400 font-bold text-sm">
-                              KSH {{ formatPrice(p.base_price || p.price) }}
-                            </p>
-                            @if (isInStock(p)) {
-                              <p class="text-xs text-emerald-400 mt-0.5">In Stock</p>
-                            } @else {
-                              <p class="text-xs text-red-400 mt-0.5">Sold Out</p>
-                            }
-                          </div>
+      <!-- Category hidden on phones -->
+      <p class="hidden sm:block text-xs text-emerald-400 uppercase mb-1">
+        {{ categoryLabel(p.category) }}
+      </p>
 
-                          @if (!isInStock(p)) {
-                            <button type="button" disabled
-                              class="bg-zinc-700 text-zinc-400 font-semibold px-3 py-1.5 rounded-full text-xs cursor-not-allowed">
-                              Sold Out
-                            </button>
-                          } @else if (hasFlavors(p)) {
-                            <button
-                              type="button"
-                              (click)="openFlavorPicker(p); $event.stopPropagation()"
-                              class="bg-zinc-100 hover:bg-white text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
-                              Choose option
-                            </button>
-                          } @else {
-                            <button
-                              type="button"
-                              (click)="addSimilarToCart(p); $event.stopPropagation()"
-                              class="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
-                              Add to Cart
-                            </button>
-                          }
-                        </div>
-                      </div>
-                    </div>
+      <h3 class="font-semibold line-clamp-1 mb-1">
+        {{ p.name }}
+      </h3>
+
+    </a>
+
+    <!-- Description hidden on phones and limited to 2 lines on computers -->
+    <p
+      class="similar-description text-zinc-400 text-xs mb-1">
+      {{ p.description }}
+    </p>
+
+    <!-- Read more hidden on phones -->
+    <a 
+      [routerLink]="['/product', p.id]" 
+      (click)="onCardClick($event)" 
+      class="hidden sm:inline-block text-xs text-emerald-400 hover:underline mb-3">
+      Read more
+    </a>
+
+    <div class="flex items-center justify-between gap-2">
+      <div>
+        <p class="text-emerald-400 font-bold text-sm">
+          KSH {{ formatPrice(p.base_price || p.price) }}
+        </p>
+
+        @if (isInStock(p)) {
+          <p class="text-xs text-emerald-400 mt-0.5">
+            In Stock
+          </p>
+        } @else {
+          <p class="text-xs text-red-400 mt-0.5">
+            Sold Out
+          </p>
+        }
+      </div>
+
+      @if (!isInStock(p)) {
+
+        <button 
+          type="button" 
+          disabled
+          class="bg-zinc-700 text-zinc-400 font-semibold px-3 py-1.5 rounded-full text-xs cursor-not-allowed">
+          Sold Out
+        </button>
+
+      } @else if (hasFlavors(p)) {
+
+        <button 
+          type="button" 
+          (click)="openFlavorPicker(p); $event.stopPropagation()" 
+          class="bg-zinc-100 hover:bg-white text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
+          Choose option
+        </button>
+
+      } @else {
+
+        <button 
+          type="button" 
+          (click)="addSimilarToCart(p); $event.stopPropagation()" 
+          class="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
+          Add to Cart
+        </button>
+
+      }
+    </div>
+  </div>
+</div>
                   }
                 </div>
               </div>
@@ -339,6 +367,21 @@ import { ApiService } from '../../services/api.service';
       60%  { opacity: 1; transform: scale(1.03); }
       100% { opacity: 1; transform: scale(1); }
     }
+
+    .similar-description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  max-height: 2.5rem;
+}
+
+@media (max-width: 639px) {
+  .similar-description {
+    display: none !important;
+  }
+}
   `]
 })
 export class ProductDetailComponent implements OnInit, OnDestroy {
