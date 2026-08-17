@@ -291,60 +291,105 @@ import { ApiService } from '../../services/api.service';
             Read more
           </a>
 
-          <div class="flex items-center justify-between gap-2">
+<!-- PRICE + STOCK + BUTTON -->
+<div class="mt-2">
 
-            <div>
+  <!-- PRICE + STOCK -->
+  <div class="flex items-center justify-between gap-2">
 
-              <span class="text-emerald-400 font-bold text-sm">
-                KSH {{ formatPrice(product.base_price || product.price) }}
-              </span>
+    <div>
 
-              @if (isInStock(product)) {
+      <span class="text-emerald-400 font-bold text-sm">
+        KSH {{ formatPrice(product.base_price || product.price) }}
+      </span>
 
-                <p class="text-xs text-emerald-400 mt-0.5">
-                  In Stock
-                </p>
+      @if (isInStock(product)) {
 
-              } @else {
+        <p class="text-xs text-emerald-400 mt-0.5">
+          In Stock
+        </p>
 
-                <p class="text-xs text-red-400 mt-0.5">
-                  Sold Out
-                </p>
+      } @else {
 
-              }
+        <p class="text-xs text-red-400 mt-0.5">
+          Sold Out
+        </p>
 
-            </div>
+      }
 
-            @if (!isInStock(product)) {
+    </div>
 
-              <button
-                type="button"
-                disabled
-                class="bg-zinc-700 text-zinc-400 font-semibold px-3 py-1.5 rounded-full text-xs cursor-not-allowed">
-                Sold Out
-              </button>
+    <!-- DESKTOP BUTTON -->
+    <div class="hidden sm:block">
 
-            } @else if (hasFlavors(product)) {
+      @if (!isInStock(product)) {
 
-              <button
-                type="button"
-                (click)="openFlavorPicker(product); $event.stopPropagation()"
-                class="bg-zinc-100 hover:bg-white text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
-                Choose option
-              </button>
+        <button
+          type="button"
+          disabled
+          class="bg-zinc-700 text-zinc-400 font-semibold px-3 py-1.5 rounded-full text-xs cursor-not-allowed">
+          Sold Out
+        </button>
 
-            } @else {
+      } @else if (hasFlavors(product)) {
 
-              <button
-                type="button"
-                (click)="addToCart(product); $event.stopPropagation()"
-                class="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
-                Add to Cart
-              </button>
+        <button
+          type="button"
+          (click)="openFlavorPicker(product); $event.stopPropagation()"
+          class="bg-zinc-100 hover:bg-white text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
+          Choose option
+        </button>
 
-            }
+      } @else {
 
-          </div>
+        <button
+          type="button"
+          (click)="addToCart(product); $event.stopPropagation()"
+          class="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
+          Add to Cart
+        </button>
+
+      }
+
+    </div>
+
+  </div>
+
+  <!-- PHONE BUTTON -->
+  <div class="sm:hidden mt-3">
+
+    @if (!isInStock(product)) {
+
+      <button
+        type="button"
+        disabled
+        class="w-full bg-zinc-700 text-zinc-400 font-semibold px-3 py-2.5 rounded-full text-xs cursor-not-allowed">
+        Sold Out
+      </button>
+
+    } @else if (hasFlavors(product)) {
+
+      <button
+        type="button"
+        (click)="openFlavorPicker(product); $event.stopPropagation()"
+        class="w-full bg-zinc-100 hover:bg-white text-black font-semibold px-3 py-2.5 rounded-full text-xs transition active:scale-95">
+        Choose option
+      </button>
+
+    } @else {
+
+      <button
+        type="button"
+        (click)="addToCart(product); $event.stopPropagation()"
+        class="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-3 py-2.5 rounded-full text-xs transition active:scale-95">
+        Add to Cart
+      </button>
+
+    }
+
+  </div>
+
+</div>
 
         </div>
 

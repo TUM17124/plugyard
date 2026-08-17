@@ -168,96 +168,135 @@ import { ApiService } from '../../services/api.service';
                   class="flex gap-4 overflow-x-auto pb-4 similar-scroll"
                   [class.is-dragging]="dragging"
                   (mousedown)="startDrag($event)">
+                 
                   @for (p of similar(); track p.id) {
-                    <div class="shrink-0 w-64 sm:w-72 group overflow-hidden transition">
-  <a [routerLink]="['/product', p.id]" class="block" (click)="onCardClick($event)">
-    <div class="aspect-square overflow-hidden">
-      <img 
-        [src]="p.image" 
-        [alt]="p.name" 
-        class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" 
-        loading="lazy" 
-        draggable="false">
-    </div>
-  </a>
 
-  <div class="p-4">
-    <a [routerLink]="['/product', p.id]" (click)="onCardClick($event)">
+  <div class="shrink-0 w-64 sm:w-72 group overflow-hidden transition">
 
-      <!-- Category hidden on phones -->
-      <p class="hidden sm:block text-xs text-emerald-400 uppercase mb-1">
-        {{ categoryLabel(p.category) }}
-      </p>
+    <a
+      [routerLink]="['/product', p.id]"
+      class="block"
+      (click)="onCardClick($event)">
 
-      <h3 class="font-semibold line-clamp-1 mb-1">
-        {{ p.name }}
-      </h3>
+      <div class="aspect-square overflow-hidden">
 
-    </a>
+        <img
+          [src]="p.image"
+          [alt]="p.name"
+          class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+          loading="lazy"
+          draggable="false">
 
-    <!-- Description hidden on phones and limited to 2 lines on computers -->
-    <p
-      class="similar-description text-zinc-400 text-xs mb-1">
-      {{ p.description }}
-    </p>
-
-    <!-- Read more hidden on phones -->
-    <a 
-      [routerLink]="['/product', p.id]" 
-      (click)="onCardClick($event)" 
-      class="hidden sm:inline-block text-xs text-emerald-400 hover:underline mb-3">
-      Read more
-    </a>
-
-    <div class="flex items-center justify-between gap-2">
-      <div>
-        <p class="text-emerald-400 font-bold text-sm">
-          KSH {{ formatPrice(p.base_price || p.price) }}
-        </p>
-
-        @if (isInStock(p)) {
-          <p class="text-xs text-emerald-400 mt-0.5">
-            In Stock
-          </p>
-        } @else {
-          <p class="text-xs text-red-400 mt-0.5">
-            Sold Out
-          </p>
-        }
       </div>
 
-      @if (!isInStock(p)) {
+    </a>
 
-        <button 
-          type="button" 
-          disabled
-          class="bg-zinc-700 text-zinc-400 font-semibold px-3 py-1.5 rounded-full text-xs cursor-not-allowed">
-          Sold Out
-        </button>
+    <div class="p-4">
 
-      } @else if (hasFlavors(p)) {
+      <a
+        [routerLink]="['/product', p.id]"
+        (click)="onCardClick($event)">
 
-        <button 
-          type="button" 
-          (click)="openFlavorPicker(p); $event.stopPropagation()" 
-          class="bg-zinc-100 hover:bg-white text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
-          Choose option
-        </button>
+        <!-- CATEGORY: DESKTOP ONLY -->
+        <p class="hidden sm:block text-xs text-emerald-400 uppercase mb-1">
+          {{ categoryLabel(p.category) }}
+        </p>
 
-      } @else {
+        <!-- PRODUCT TITLE -->
+        <h3 class="font-semibold line-clamp-2 mb-1">
+          {{ p.name }}
+        </h3>
 
-        <button 
-          type="button" 
-          (click)="addSimilarToCart(p); $event.stopPropagation()" 
-          class="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
-          Add to Cart
-        </button>
+      </a>
 
-      }
+      <!-- DESCRIPTION: DESKTOP ONLY -->
+      <p
+        class="similar-description hidden sm:block text-zinc-400 text-xs mb-1">
+        {{ p.description }}
+      </p>
+
+      <!-- READ MORE: DESKTOP ONLY -->
+      <a
+        [routerLink]="['/product', p.id]"
+        (click)="onCardClick($event)"
+        class="hidden sm:inline-block text-xs text-emerald-400 hover:underline mb-3">
+        Read more
+      </a>
+
+      <!-- PHONE:
+           TITLE
+           PRICE / STOCK
+           BUTTON BELOW
+
+           DESKTOP:
+           PRICE / STOCK + BUTTON SIDE BY SIDE
+      -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+        <!-- PRICE + STOCK -->
+        <div>
+
+          <p class="text-emerald-400 font-bold text-sm">
+            KSH {{ formatPrice(p.base_price || p.price) }}
+          </p>
+
+          @if (isInStock(p)) {
+
+            <p class="text-xs text-emerald-400 mt-0.5">
+              In Stock
+            </p>
+
+          } @else {
+
+            <p class="text-xs text-red-400 mt-0.5">
+              Sold Out
+            </p>
+
+          }
+
+        </div>
+
+        <!-- BUTTON -->
+        <div class="w-full sm:w-auto">
+
+          @if (!isInStock(p)) {
+
+            <button
+              type="button"
+              disabled
+              class="w-full sm:w-auto bg-zinc-700 text-zinc-400 font-semibold px-3 py-1.5 rounded-full text-xs cursor-not-allowed">
+              Sold Out
+            </button>
+
+          } @else if (hasFlavors(p)) {
+
+            <button
+              type="button"
+              (click)="openFlavorPicker(p); $event.stopPropagation()"
+              class="w-full sm:w-auto bg-zinc-100 hover:bg-white text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
+              Choose option
+            </button>
+
+          } @else {
+
+            <button
+              type="button"
+              (click)="addSimilarToCart(p); $event.stopPropagation()"
+              class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-3 py-1.5 rounded-full text-xs transition active:scale-95">
+              Add to Cart
+            </button>
+
+          }
+
+        </div>
+
+      </div>
+
     </div>
+
   </div>
-</div>
-                  }
+
+}
                 </div>
               </div>
 
