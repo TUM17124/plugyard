@@ -64,7 +64,7 @@ import { CartService } from '../../services/cart.service';
           <div class="p-5 border-t border-zinc-800 space-y-4">
             <div class="flex justify-between text-lg font-bold">
               <span>Total</span>
-              <span class="text-emerald-400">KSH {{ cart.totalPrice() }}</span>
+              <span class="text-emerald-400">KSH {{ formatPrice(cart.totalPrice()) }}</span>
             </div>
             <button 
               (click)="checkout.emit()"

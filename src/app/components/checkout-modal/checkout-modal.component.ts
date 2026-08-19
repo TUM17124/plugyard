@@ -1,6 +1,7 @@
 import { Component, inject, input, output, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { CartService, CartItem } from '../../services/cart.service';
 import { ApiService } from '../../services/api.service';
 
@@ -185,6 +186,7 @@ const SAVED_CHECKOUT_KEY = 'plugyard-checkout-info';
   `
 })
 export class CheckoutModalComponent {
+  private router = inject(Router);
   cart = inject(CartService);
   api = inject(ApiService);
 
@@ -286,6 +288,11 @@ export class CheckoutModalComponent {
         this.orderSuccess.set(true);
         this.orderPlaced.emit();
         this.loading.set(false);
+
+        // forces product-grid NavigationEnd → reload() including recommended/home
+  this.router.navigate(['/'], {
+    queryParams: { refreshed: Date.now() }
+  });
       },
       error: (err) => {
         console.error('Order failed', err);

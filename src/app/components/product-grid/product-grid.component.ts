@@ -13,7 +13,7 @@ import {
   HostListener
 } from '@angular/core';
 import { CommonModule, NgTemplateOutlet } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, NavigationEnd } from '@angular/router';
 import { CartService } from '../../services/cart.service';
 import { ApiService } from '../../services/api.service';
 
@@ -558,6 +558,8 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   private cart = inject(CartService);
   private api = inject(ApiService);
   private cdr = inject(ChangeDetectorRef);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   selectedCategory = input<string>('');
   searchQuery = input<string>('');
@@ -669,28 +671,47 @@ export class ProductGridComponent implements OnInit, OnDestroy {
 
   }
 
+  private routerSubscription: any;
+
   ngOnInit() {
 
-    if (
-      !this.selectedCategory() &&
-      !this.searchQuery()?.trim()
-    ) {
-
-      this.loadHome();
-
-    }
-
+  if (
+    !this.selectedCategory() &&
+    !this.searchQuery()?.trim()
+  ) {
+    this.loadHome();
   }
+
+  this.routerSubscription =
+    this.router.events.subscribe(event => {
+
+      if (event instanceof NavigationEnd) {
+
+        // Refresh product grid whenever user returns to shop
+        if (
+          event.urlAfterRedirects === '/' ||
+          event.urlAfterRedirects.startsWith('/?')
+        ) {
+          this.reload();
+        }
+
+      }
+
+    });
+
+}
 
   ngOnDestroy() {
 
-    this.endDrag();
+  this.endDrag();
 
-    this.observer?.disconnect();
+  this.observer?.disconnect();
 
-    this.observer = null;
+  this.observer = null;
 
-  }
+  this.routerSubscription?.unsubscribe();
+
+}
 
   @HostListener('window:scroll')
 
@@ -711,6 +732,8 @@ export class ProductGridComponent implements OnInit, OnDestroy {
     });
 
   }
+
+  
 
   startDrag(
     e: MouseEvent,
@@ -1249,6 +1272,21 @@ export class ProductGridComponent implements OnInit, OnDestroy {
 
   }
 
+  loadProduct(id: number) {
+
+    if (!id) {
+      return;
+    }
+
+    this.loading.set(false);
+    this.hasMore.set(false);
+    this.products.set([]);
+    this.homeSections.set([]);
+    this.recommended.set([]);
+    this.cdr.detectChanges();
+
+  }
+
   loadCategory(
   category: string
 ) {
@@ -1497,31 +1535,23 @@ export class ProductGridComponent implements OnInit, OnDestroy {
   }
 
   reload() {
+  this.lastCategory = '';
+  this.lastSearch = '';
 
-    const mode =
-      this.viewMode();
+  const mode = this.viewMode();
 
-    if (
-      mode === 'recommended'
-    ) {
-
-      this.loadHome();
-
-    } else if (
-      mode.startsWith('search:')
-    ) {
-
-      this.loadSearch(
-        mode.slice(7)
-      );
-
-    } else {
-
-      this.loadCategory(mode);
-
-    }
-
+  if (!mode || mode === 'recommended' || mode === 'all') {
+    this.loadHome(); // recommended API + home sections
+    return;
   }
+
+  if (mode.startsWith('search:')) {
+    this.loadSearch(mode.slice(7));
+    return;
+  }
+
+  this.loadCategory(mode);
+}
 
   availableVariants = () => {
 
